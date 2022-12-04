@@ -22,10 +22,6 @@ const getInputs = (): ActionInputs => {
   core.info(steps)
   const needs = core.getInput('needs')
   core.info(needs)
-  const test = core.getInput('test')
-  core.info(test)
-  const parse = JSON.parse(test)
-  core.info(parse)
 
   return {webhookUrl}
 }
