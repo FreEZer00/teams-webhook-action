@@ -41,6 +41,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const main_1 = __nccwpck_require__(7508);
+const input_parsing_1 = __nccwpck_require__(1241);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -53,6 +54,26 @@ function run() {
         }
     });
 }
+const getInputs = () => {
+    const webhookUrl = core.getInput('webhookUrl');
+    const jobInput = core.getInput('job');
+    const needsInput = core.getInput('needs');
+    const job = (0, input_parsing_1.parseJob)(jobInput);
+    const needs = (0, input_parsing_1.parseNeeds)(needsInput);
+    return { webhookUrl, needs, job };
+};
+run();
+
+
+/***/ }),
+
+/***/ 1241:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.parseNeeds = exports.parseJob = void 0;
 function parseNeeds(needs) {
     if (needs === '') {
         return [];
@@ -70,6 +91,7 @@ function parseNeeds(needs) {
         };
     });
 }
+exports.parseNeeds = parseNeeds;
 function parseJob(job) {
     if (job === '') {
         return undefined;
@@ -83,15 +105,7 @@ function parseJob(job) {
         cancelled: parsed.status === 'canceled'
     };
 }
-const getInputs = () => {
-    const webhookUrl = core.getInput('webhookUrl');
-    const jobInput = core.getInput('job');
-    const job = parseJob(jobInput);
-    const needsInput = core.getInput('needs');
-    const needs = parseNeeds(needsInput);
-    return { webhookUrl, needs, job };
-};
-run();
+exports.parseJob = parseJob;
 
 
 /***/ }),

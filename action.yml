@@ -5,14 +5,14 @@ inputs:
   webhook_url:
     required: true
     description: 'url of the webhook to use'
+  title:
+    required: false
+    description: 'Card title'
   job:
     description: 'JSON parsed job context'
     required: false
   needs:
     description: 'JSON parsed needs context'
-    required: false
-  test:
-    description: 'bla'
     required: false
 runs:
   using: 'node16'

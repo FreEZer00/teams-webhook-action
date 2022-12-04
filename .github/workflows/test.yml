@@ -15,12 +15,6 @@ jobs:
           npm install
       - run: |
           npm run all
-  fail:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: |
-          exit 1
   success:
     runs-on: ubuntu-latest
     steps:
@@ -29,13 +23,10 @@ jobs:
           exit 0
   test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
-    needs: [fail, success]
+    needs: [success]
     if: ${{always()}}
     steps:
       - uses: actions/checkout@v3
-      - run: |
-          echo "test step"
-          exit 0
       - uses: ./
         with:
           webhook_url: webhook.test

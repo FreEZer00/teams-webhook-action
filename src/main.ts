@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import {sendNotification} from './teamsclient/main'
 import {ActionInputs, JobStatus, NeedsResult} from './types'
+import {parseJob, parseNeeds} from './service/input-parsing'
 
 async function run(): Promise<void> {
   try {
@@ -11,46 +12,13 @@ async function run(): Promise<void> {
   }
 }
 
-function parseNeeds(needs: string): NeedsResult[] {
-  if (needs === '') {
-    return []
-  }
-  const parsed = JSON.parse(needs)
-  return Object.keys(parsed).map((key): NeedsResult => {
-    const parseElement = parsed[key]
-    return {
-      jobName: key,
-      result: parseElement.result,
-      success: parseElement.result === 'success',
-      skipped: parseElement.result === 'skipped',
-      failure: parseElement.result === 'failure',
-      cancelled: parseElement.result === 'canceled'
-    }
-  })
-}
-
-function parseJob(job: string): JobStatus | undefined {
-  if (job === '') {
-    return undefined
-  }
-  const parsed = JSON.parse(job)
-
-  return {
-    status: parsed.status,
-    success: parsed.status === 'success',
-    skipped: parsed.status === 'skipped',
-    failure: parsed.status === 'failure',
-    cancelled: parsed.status === 'canceled'
-  }
-}
-
 const getInputs = (): ActionInputs => {
   const webhookUrl = core.getInput('webhookUrl')
   const jobInput = core.getInput('job')
-  const job = parseJob(jobInput)
-
   const needsInput = core.getInput('needs')
-  const needs = parseNeeds(needsInput)
+
+  const job: JobStatus | undefined = parseJob(jobInput)
+  const needs: NeedsResult[] = parseNeeds(needsInput)
 
   return {webhookUrl, needs, job}
 }

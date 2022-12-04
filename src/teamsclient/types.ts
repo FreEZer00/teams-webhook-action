@@ -49,32 +49,63 @@ interface OpenUriAction {
   name: string
   targets: Target[]
 }
+const defaultOpenUriAction = {
+  '@type': 'OpenUri',
+  name: null,
+  targets: []
+}
 
 interface Action {
-  '@type': 'HttpPOST'
+  '@type': string //'HttpPOST'
   name: string
   target: string
 }
 
+const defaultAction = {
+  '@type': 'HttpPOST',
+  name: null,
+  target: null
+}
+
 interface ActionCardAction {
-  '@type': 'ActionCard'
+  '@type': string //'ActionCard'
   name: string
   inputs: Input[]
   actions: Action[]
   targets: Target[]
 }
 
+const defaultActionCardAction = {
+  '@type': 'ActionCard',
+  name: null,
+  inputs: [],
+  actions: [],
+  targets: []
+}
+
 interface ConnectorMessage {
-  '@type': 'MessageCard'
-  '@context': 'http://schema.org/extensions'
+  '@type'?: string
+  '@context'?: string
   themeColor: string
   summary: string
   sections?: Section[]
-
   potentialAction?: PotentialAction[]
 }
 
+const defaultConnectorMessage = {
+  '@type': 'MessageCard',
+  '@context': 'http://schema.org/extensions',
+  themeColor: null,
+  summary: null,
+  sections: [],
+  potentialAction: []
+}
+
 export {
+  defaultConnectorMessage,
+  defaultOpenUriAction,
+  defaultAction,
+  defaultActionCardAction,
   Action,
   PotentialAction,
   OpenUriAction,
