@@ -16,7 +16,6 @@ jobs:
       - run: |
           npm run all
   fail:
-    id: fail
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
