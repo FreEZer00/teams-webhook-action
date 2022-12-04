@@ -14,6 +14,9 @@ inputs:
   needs:
     description: 'JSON parsed needs context'
     required: false
+  test:
+    description: 'bla'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
