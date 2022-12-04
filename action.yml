@@ -1,11 +1,19 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'teams-webhook'
+description: 'Send a defined notification to a microsoft teams webhook'
+author: 'Freezer00'
 inputs:
-  milliseconds: # change this
+  webhook_url:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'url of the webhook to use'
+  job:
+    description: 'JSON parsed job context'
+    required: false
+  steps:
+    description: 'JSON parsed steps context'
+    required: false
+  needs:
+    description: 'JSON parsed needs context'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

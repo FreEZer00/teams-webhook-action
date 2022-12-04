@@ -1,8 +1,8 @@
 {
-  "name": "typescript-action",
+  "name": "teams-webhook-action",
   "version": "0.0.0",
   "private": true,
-  "description": "TypeScript template action",
+  "description": "Github action to use webhook of microsoft teams",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -20,12 +20,14 @@
   "keywords": [
     "actions",
     "node",
-    "setup"
+    "setup",
+    "teams"
   ],
-  "author": "",
+  "author": "Freezer00",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.10.0"
+    "@actions/core": "^1.10.0",
+    "axios": "^1.2.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.10",
