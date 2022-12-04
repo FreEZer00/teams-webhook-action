@@ -14,9 +14,10 @@ interface ActionInputs {
   webhookUrl: string
 }
 
-interface NeedsResults {
+interface NeedsResult {
   jobName: string
   result: string
+  success: boolean
 }
 const getInputs = (): ActionInputs => {
   const webhookUrl = core.getInput('webhookUrl')
@@ -27,12 +28,19 @@ const getInputs = (): ActionInputs => {
   const needs = core.getInput('needs')
   core.info(needs)
   const parse = JSON.parse(needs)
-  const needsList: NeedsResults[] = Object.keys(parse).map(
-    (value): NeedsResults => {
-      const parseElement = parse[value]
-      return {jobName: value, result: parseElement.result}
+  const needsList: NeedsResult[] = Object.keys(parse).map(
+    (key): NeedsResult => {
+      const parseElement = parse[key]
+      return {
+        jobName: key,
+        result: parseElement.result,
+        success: parseElement.result === 'Success'
+      }
     }
   )
+  for (const n of needsList) {
+    core.info(`${n.jobName} ${n.result} ${n.success}`)
+  }
   core.info(`Parsed needs : ${needsList}`)
 
   return {webhookUrl}
