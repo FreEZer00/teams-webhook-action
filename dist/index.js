@@ -61,6 +61,12 @@ const getInputs = () => {
     core.info(steps);
     const needs = core.getInput('needs');
     core.info(needs);
+    const parse = JSON.parse(needs);
+    const needsList = Object.keys(parse).map((value) => {
+        const parseElement = parse[value];
+        return { jobName: value, result: parseElement.result };
+    });
+    core.info(`Parsed needs : ${needsList}`);
     return { webhookUrl };
 };
 run();
