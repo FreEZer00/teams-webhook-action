@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import {sendNotification} from './teamsclient/main'
+import {ActionInputs, JobStatus, NeedsResult} from './types'
 
 async function run(): Promise<void> {
   try {
@@ -10,40 +11,48 @@ async function run(): Promise<void> {
   }
 }
 
-interface ActionInputs {
-  webhookUrl: string
+function parseNeeds(needs: string): NeedsResult[] {
+  if (needs === '') {
+    return []
+  }
+  const parsed = JSON.parse(needs)
+  return Object.keys(parsed).map((key): NeedsResult => {
+    const parseElement = parsed[key]
+    return {
+      jobName: key,
+      result: parseElement.result,
+      success: parseElement.result === 'success',
+      skipped: parseElement.result === 'skipped',
+      failure: parseElement.result === 'failure',
+      cancelled: parseElement.result === 'canceled'
+    }
+  })
 }
 
-interface NeedsResult {
-  jobName: string
-  result: string
-  success: boolean
+function parseJob(job: string): JobStatus | undefined {
+  if (job === '') {
+    return undefined
+  }
+  const parsed = JSON.parse(job)
+
+  return {
+    status: parsed.status,
+    success: parsed.status === 'success',
+    skipped: parsed.status === 'skipped',
+    failure: parsed.status === 'failure',
+    cancelled: parsed.status === 'canceled'
+  }
 }
+
 const getInputs = (): ActionInputs => {
   const webhookUrl = core.getInput('webhookUrl')
-  const job = core.getInput('job')
-  core.info(job)
-  const steps = core.getInput('steps')
-  core.info(steps)
-  const needs = core.getInput('needs')
-  core.info(needs)
-  const parse = JSON.parse(needs)
-  const needsList: NeedsResult[] = Object.keys(parse).map(
-    (key): NeedsResult => {
-      const parseElement = parse[key]
-      return {
-        jobName: key,
-        result: parseElement.result,
-        success: parseElement.result === 'Success'
-      }
-    }
-  )
-  for (const n of needsList) {
-    core.info(`${n.jobName} ${n.result} ${n.success}`)
-  }
-  core.info(`Parsed needs : ${needsList}`)
+  const jobInput = core.getInput('job')
+  const job = parseJob(jobInput)
 
-  return {webhookUrl}
+  const needsInput = core.getInput('needs')
+  const needs = parseNeeds(needsInput)
+
+  return {webhookUrl, needs, job}
 }
 
 run()

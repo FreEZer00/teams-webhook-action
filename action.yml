@@ -8,9 +8,6 @@ inputs:
   job:
     description: 'JSON parsed job context'
     required: false
-  steps:
-    description: 'JSON parsed steps context'
-    required: false
   needs:
     description: 'JSON parsed needs context'
     required: false

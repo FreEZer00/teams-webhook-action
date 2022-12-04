@@ -53,28 +53,43 @@ function run() {
         }
     });
 }
-const getInputs = () => {
-    const webhookUrl = core.getInput('webhookUrl');
-    const job = core.getInput('job');
-    core.info(job);
-    const steps = core.getInput('steps');
-    core.info(steps);
-    const needs = core.getInput('needs');
-    core.info(needs);
-    const parse = JSON.parse(needs);
-    const needsList = Object.keys(parse).map((key) => {
-        const parseElement = parse[key];
+function parseNeeds(needs) {
+    if (needs === '') {
+        return [];
+    }
+    const parsed = JSON.parse(needs);
+    return Object.keys(parsed).map((key) => {
+        const parseElement = parsed[key];
         return {
             jobName: key,
             result: parseElement.result,
-            success: parseElement.result === 'Success'
+            success: parseElement.result === 'success',
+            skipped: parseElement.result === 'skipped',
+            failure: parseElement.result === 'failure',
+            cancelled: parseElement.result === 'canceled'
         };
     });
-    for (const n of needsList) {
-        core.info(`${n.jobName} ${n.result} ${n.success}`);
+}
+function parseJob(job) {
+    if (job === '') {
+        return undefined;
     }
-    core.info(`Parsed needs : ${needsList}`);
-    return { webhookUrl };
+    const parsed = JSON.parse(job);
+    return {
+        status: parsed.status,
+        success: parsed.status === 'success',
+        skipped: parsed.status === 'skipped',
+        failure: parsed.status === 'failure',
+        cancelled: parsed.status === 'canceled'
+    };
+}
+const getInputs = () => {
+    const webhookUrl = core.getInput('webhookUrl');
+    const jobInput = core.getInput('job');
+    const job = parseJob(jobInput);
+    const needsInput = core.getInput('needs');
+    const needs = parseNeeds(needsInput);
+    return { webhookUrl, needs, job };
 };
 run();
 
