@@ -24,12 +24,30 @@ const getInputs = (): ActionInputs => {
   const webhookUrl = core.getInput('webhook_url')
   const jobInput = core.getInput('job')
   const needsInput = core.getInput('needs')
-  const title = core.getInput('title') ? core.getInput('title') : undefined
+  const title =
+    core.getInput('title') !== '' ? core.getInput('title') : undefined
+  const additionalButtonTitle =
+    core.getInput('additional_button_title') !== ''
+      ? core.getInput('additional_button_title')
+      : undefined
+  const additionalButtonUrl =
+    core.getInput('additional_button_url') !== ''
+      ? core.getInput('additional_button_url')
+      : undefined
 
   const job: JobStatus | undefined = parseJob(jobInput)
   const needs: NeedsResult[] = parseNeeds(needsInput)
 
-  return {webhookUrl, needs, job, title}
+  return {
+    webhookUrl,
+    needs,
+    job,
+    title,
+    additionalButton:
+      additionalButtonTitle && additionalButtonUrl
+        ? {displayName: additionalButtonTitle, url: additionalButtonUrl}
+        : undefined
+  }
 }
 
 run()

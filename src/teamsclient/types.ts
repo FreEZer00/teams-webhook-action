@@ -1,12 +1,12 @@
 interface Fact {
   name: string
-  values: string
+  value: string
 }
 
 interface Section {
   activityTitle: string
-  activitySubtitle: string
-  activityImage: string
+  activitySubtitle?: string
+  activityImage?: string
   facts: Fact[]
   markdown: boolean
 }
@@ -38,14 +38,19 @@ interface TextInput {
 }
 
 interface Target {
-  os: 'default'
+  os: string
   uri: string
+}
+
+const defaultTarget = {
+  os: 'default',
+  uri: null
 }
 
 type PotentialAction = ActionCardAction | OpenUriAction
 
 interface OpenUriAction {
-  '@type': 'OpenUri'
+  '@type': string
   name: string
   targets: Target[]
 }
@@ -106,6 +111,7 @@ export {
   defaultOpenUriAction,
   defaultAction,
   defaultActionCardAction,
+  defaultTarget,
   Action,
   PotentialAction,
   OpenUriAction,

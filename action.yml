@@ -14,6 +14,12 @@ inputs:
   needs:
     description: 'JSON parsed needs context'
     required: false
+  additional_button_title:
+    description: 'Display name for optional additional button'
+    required: false
+  additional_button_url:
+    description: 'URL for optional additional button'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

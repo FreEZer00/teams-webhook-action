@@ -1,8 +1,14 @@
+interface AdditionalButton {
+  displayName: string
+  url: string
+}
+
 interface ActionInputs {
   webhookUrl: string
   job?: JobStatus
   needs: NeedsResult[]
   title?: string
+  additionalButton?: AdditionalButton
 }
 
 interface NeedsResult {
