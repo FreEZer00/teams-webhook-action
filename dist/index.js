@@ -57,7 +57,7 @@ function run() {
     });
 }
 const getInputs = () => {
-    const webhookUrl = core.getInput('webhookUrl');
+    const webhookUrl = core.getInput('webhook_url');
     const jobInput = core.getInput('job');
     const needsInput = core.getInput('needs');
     const title = core.getInput('title') ? core.getInput('title') : undefined;
