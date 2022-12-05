@@ -22,7 +22,6 @@ async function run(): Promise<void> {
     const connectorMessage = buildConnectorMessage(inputs, githubValues)
     await sendNotification(
       inputs.webhookUrl,
-      false,
       connectorMessage,
       core.info,
       core.error

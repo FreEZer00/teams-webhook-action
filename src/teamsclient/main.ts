@@ -3,28 +3,29 @@ import axios from 'axios'
 
 async function sendNotification(
   webHookUrl: string,
-  dryRun: boolean,
   message: ConnectorMessage,
   log?: (logMessage: string) => void,
   errorLog?: (logMessage: string) => void
 ): Promise<void> {
   !log || log(`Connector message ${JSON.stringify(message, null, 2)}`)
-  if (!webHookUrl || dryRun) {
+  if (!webHookUrl) {
     !log || log('Webhook url not defined')
     return
   }
   const axiosInstance = axios.create()
   try {
     const axiosResponse = await axiosInstance.post(webHookUrl, message)
-    if (log) {
+    !log ||
       log(
-        `HTTP ${axiosResponse.status}: Posted connector message. Response: ${axiosResponse.data}`
+        `Posted connector message with response: HTTP ${axiosResponse.status}`
       )
-    }
   } catch (error: unknown) {
-    if (errorLog) {
-      errorLog(`Error occurred when trying to post connector message: ${error}`)
-    }
+    !errorLog ||
+      errorLog(
+        `Error occurred when trying to post connector message: ${JSON.stringify(
+          error
+        )}`
+      )
     throw error
   }
 }
