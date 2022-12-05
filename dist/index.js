@@ -60,7 +60,7 @@ function run() {
             const inputs = getInputs();
             const githubValues = getGithubValues();
             const connectorMessage = (0, webhook_1.buildConnectorMessage)(inputs, githubValues);
-            yield (0, main_1.sendNotification)(inputs.webhookUrl, false, connectorMessage, core.info, core.error);
+            yield (0, main_1.sendNotification)(inputs.webhookUrl, connectorMessage, core.info, core.error);
         }
         catch (error) {
             if (error instanceof Error)
@@ -178,7 +178,7 @@ function createSections(overallStatus, inputs, githubValues) {
     const sections = [];
     if (inputs.needs.length !== 0) {
         const needsSection = {
-            activityTitle: `Workflow ${githubValues.workflow} result ${overallStatus}`,
+            activityTitle: `Workflow "${githubValues.workflow}" ram with result ${overallStatus}`,
             activitySubtitle: `Triggered by ${githubValues.actor}`,
             facts: createFacts(inputs.needs, githubValues, inputs.job),
             markdown: false
@@ -238,24 +238,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sendNotification = void 0;
 const axios_1 = __importDefault(__nccwpck_require__(8757));
-function sendNotification(webHookUrl, dryRun, message, log, errorLog) {
+function sendNotification(webHookUrl, message, log, errorLog) {
     return __awaiter(this, void 0, void 0, function* () {
         !log || log(`Connector message ${JSON.stringify(message, null, 2)}`);
-        if (!webHookUrl || dryRun) {
+        if (!webHookUrl) {
             !log || log('Webhook url not defined');
             return;
         }
         const axiosInstance = axios_1.default.create();
         try {
             const axiosResponse = yield axiosInstance.post(webHookUrl, message);
-            if (log) {
-                log(`HTTP ${axiosResponse.status}: Posted connector message. Response: ${axiosResponse.data}`);
-            }
+            !log ||
+                log(`Posted connector message with response: HTTP ${axiosResponse.status}`);
         }
         catch (error) {
-            if (errorLog) {
-                errorLog(`Error occurred when trying to post connector message: ${error}`);
-            }
+            !errorLog ||
+                errorLog(`Error occurred when trying to post connector message: ${JSON.stringify(error)}`);
             throw error;
         }
     });
