@@ -7,10 +7,9 @@ async function sendNotification(
   log?: (logMessage: string) => void,
   errorLog?: (logMessage: string) => void
 ): Promise<void> {
+  !log || log(`Connector message ${JSON.stringify(message, null, 2)}`)
   if (!webHookUrl) {
-    if (log) {
-      log('Webhook url not defined')
-    }
+    !log || log('Webhook url not defined')
     return
   }
   const axiosInstance = axios.create()

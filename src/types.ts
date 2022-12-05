@@ -2,6 +2,7 @@ interface ActionInputs {
   webhookUrl: string
   job?: JobStatus
   needs: NeedsResult[]
+  title?: string
 }
 
 interface NeedsResult {

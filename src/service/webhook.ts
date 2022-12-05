@@ -23,14 +23,11 @@ function getOverallStatus(inputs: ActionInputs): Status {
   return 'success'
 }
 
-function buildConnectorMessage(
-  inputs: ActionInputs,
-  title: string
-): ConnectorMessage {
+function buildConnectorMessage(inputs: ActionInputs): ConnectorMessage {
   const overallStatus = getOverallStatus(inputs)
   return {
     ...defaultConnectorMessage,
-    summary: `${title}` || `${context.workflow} was ${overallStatus}`,
+    summary: inputs.title || `${context.workflow} was ${overallStatus}`,
     themeColor: determineColor(overallStatus)
   }
 }

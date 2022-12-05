@@ -32,4 +32,4 @@ jobs:
           webhook_url: webhook.test
           needs: ${{ toJson(needs) }}
           job: ${{ toJson(job) }}
-          steps: ${{ toJson(steps) }}
+          title: Custom title
