@@ -1,6 +1,5 @@
 import {ConnectorMessage, defaultConnectorMessage} from '../teamsclient/types'
 import {ActionInputs, Status} from '../types'
-import {context} from '@actions/github'
 
 function determineColor(status: Status): string {
   if (status === 'failure') {
@@ -27,7 +26,7 @@ function buildConnectorMessage(inputs: ActionInputs): ConnectorMessage {
   const overallStatus = getOverallStatus(inputs)
   return {
     ...defaultConnectorMessage,
-    summary: inputs.title || `${context.workflow} was ${overallStatus}`,
+    summary: inputs.title || `Workflow run was ${overallStatus}`,
     themeColor: determineColor(overallStatus)
   }
 }

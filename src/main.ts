@@ -2,15 +2,16 @@ import * as core from '@actions/core'
 import {sendNotification} from './teamsclient/main'
 import {ActionInputs, JobStatus, NeedsResult} from './types'
 import {parseJob, parseNeeds} from './service/input-parsing'
+import {buildConnectorMessage} from './service/webhook'
 
 async function run(): Promise<void> {
   try {
     const inputs = getInputs()
-    //const connectorMessage = buildConnectorMessage(inputs)
+    const connectorMessage = buildConnectorMessage(inputs)
     await sendNotification(
       inputs.webhookUrl,
       true,
-      undefined,
+      connectorMessage,
       core.info,
       core.error
     )

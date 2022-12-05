@@ -42,12 +42,13 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const main_1 = __nccwpck_require__(7508);
 const input_parsing_1 = __nccwpck_require__(1241);
+const webhook_1 = __nccwpck_require__(6223);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const inputs = getInputs();
-            //const connectorMessage = buildConnectorMessage(inputs)
-            yield (0, main_1.sendNotification)(inputs.webhookUrl, true, undefined, core.info, core.error);
+            const connectorMessage = (0, webhook_1.buildConnectorMessage)(inputs);
+            yield (0, main_1.sendNotification)(inputs.webhookUrl, true, connectorMessage, core.info, core.error);
         }
         catch (error) {
             if (error instanceof Error)
@@ -112,6 +113,43 @@ exports.parseJob = parseJob;
 
 /***/ }),
 
+/***/ 6223:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.buildConnectorMessage = void 0;
+const types_1 = __nccwpck_require__(6307);
+function determineColor(status) {
+    if (status === 'failure') {
+        return '#b80707';
+    }
+    else if (status === 'cancelled') {
+        return '#7a7c7a';
+    }
+    return '#2cbe4e';
+}
+function getOverallStatus(inputs) {
+    var _a, _b;
+    if (inputs.needs.some(need => need.failure) || ((_a = inputs.job) === null || _a === void 0 ? void 0 : _a.failure)) {
+        return 'failure';
+    }
+    else if (inputs.needs.some(need => need.cancelled) ||
+        ((_b = inputs.job) === null || _b === void 0 ? void 0 : _b.cancelled)) {
+        return 'cancelled';
+    }
+    return 'success';
+}
+function buildConnectorMessage(inputs) {
+    const overallStatus = getOverallStatus(inputs);
+    return Object.assign(Object.assign({}, types_1.defaultConnectorMessage), { summary: inputs.title || `Workflow run was ${overallStatus}`, themeColor: determineColor(overallStatus) });
+}
+exports.buildConnectorMessage = buildConnectorMessage;
+
+
+/***/ }),
+
 /***/ 7508:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -155,6 +193,46 @@ function sendNotification(webHookUrl, dryRun, message, log, errorLog) {
     });
 }
 exports.sendNotification = sendNotification;
+
+
+/***/ }),
+
+/***/ 6307:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.defaultActionCardAction = exports.defaultAction = exports.defaultOpenUriAction = exports.defaultConnectorMessage = void 0;
+const defaultOpenUriAction = {
+    '@type': 'OpenUri',
+    name: null,
+    targets: []
+};
+exports.defaultOpenUriAction = defaultOpenUriAction;
+const defaultAction = {
+    '@type': 'HttpPOST',
+    name: null,
+    target: null
+};
+exports.defaultAction = defaultAction;
+const defaultActionCardAction = {
+    '@type': 'ActionCard',
+    name: null,
+    inputs: [],
+    actions: [],
+    targets: []
+};
+exports.defaultActionCardAction = defaultActionCardAction;
+const defaultConnectorMessage = {
+    '@type': 'MessageCard',
+    '@context': 'http://schema.org/extensions',
+    themeColor: null,
+    summary: null,
+    sections: [],
+    potentialAction: []
+};
+exports.defaultConnectorMessage = defaultConnectorMessage;
 
 
 /***/ }),
