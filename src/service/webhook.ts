@@ -59,7 +59,7 @@ function createSections(
   const sections: Section[] = []
   if (inputs.needs.length !== 0) {
     const needsSection: Section = {
-      activityTitle: `Workflow "${githubValues.workflow}" ram with result ${overallStatus}`,
+      activityTitle: `Workflow "${githubValues.workflow}" ran with result ${overallStatus}`,
       activitySubtitle: `Triggered by ${githubValues.actor}`,
       facts: createFacts(inputs.needs, githubValues, inputs.job),
       markdown: false
