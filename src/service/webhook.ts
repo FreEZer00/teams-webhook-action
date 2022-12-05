@@ -8,8 +8,13 @@ import {
   PotentialAction,
   Section
 } from '../teamsclient/types'
-import {ActionInputs, GithubValues, NeedsResult, Status} from '../types'
-import {GitHub} from '@actions/github/lib/utils'
+import {
+  ActionInputs,
+  GithubValues,
+  JobStatus,
+  NeedsResult,
+  Status
+} from '../types'
 
 function determineColor(status: Status): string {
   if (status === 'failure') {
@@ -32,49 +37,45 @@ function getOverallStatus(inputs: ActionInputs): Status {
   return 'success'
 }
 
-function createNeedsFacts(needs: NeedsResult[]): Fact[] {
-  return needs.map((n): Fact => {
-    return {name: n.jobName, value: n.result}
-  })
+function createFacts(
+  needs: NeedsResult[],
+  githubValues: GithubValues,
+  job?: JobStatus
+): Fact[] {
+  const facts: Fact[] = needs.map(
+    (n): Fact => ({name: n.jobName, value: n.result})
+  )
+  if (job) {
+    facts.push({name: `${githubValues.job}`, value: job.status})
+  }
+  return facts
 }
 
 function createSections(
   overallStatus: Status,
   inputs: ActionInputs,
-  githubValues?: GithubValues
+  githubValues: GithubValues
 ): Section[] {
   const sections: Section[] = []
   if (inputs.needs.length !== 0) {
     const needsSection: Section = {
-      activityTitle: 'Workflow jobs',
-      activitySubtitle: githubValues
-        ? `Triggered by ${githubValues.actor}`
-        : '',
-      facts: createNeedsFacts(inputs.needs),
+      activityTitle: `Workflow ${githubValues.workflow} result ${overallStatus}`,
+      activitySubtitle: `Triggered by ${githubValues.actor}`,
+      facts: createFacts(inputs.needs, githubValues, inputs.job),
       markdown: false
     }
     sections.push(needsSection)
-  }
-  if (inputs.job) {
-    const jobSection: Section = {
-      activityTitle: `${githubValues ? githubValues?.job : 'Job'} status: ${
-        inputs.job?.status
-      }`,
-      facts: [],
-      markdown: false
-    }
-    sections.push(jobSection)
   }
   return sections
 }
 
 function createPotentialAction(
   inputs: ActionInputs,
-  githubValues?: GithubValues
+  githubValues: GithubValues
 ): PotentialAction[] {
   const potentialAction: PotentialAction[] = []
 
-  if (githubValues) {
+  if (githubValues.repositoryUrl) {
     const workflowAction: OpenUriAction = {
       ...defaultOpenUriAction,
       name: 'Workflow run',
@@ -107,19 +108,17 @@ function createPotentialAction(
 function getSummary(
   inputs: ActionInputs,
   overallStatus: Status,
-  githubValues?: GithubValues
+  githubValues: GithubValues
 ): string {
   if (inputs.title) {
     return inputs.title
-  } else if (githubValues) {
-    return `${githubValues.workflow} was ${overallStatus}`
   }
-  return `Workflow run was ${overallStatus}`
+  return `${githubValues.workflow} was ${overallStatus}`
 }
 
 function buildConnectorMessage(
   inputs: ActionInputs,
-  githubValues?: GithubValues
+  githubValues: GithubValues
 ): ConnectorMessage {
   const overallStatus = getOverallStatus(inputs)
   return {

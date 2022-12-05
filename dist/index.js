@@ -46,15 +46,13 @@ const webhook_1 = __nccwpck_require__(6223);
 const github_1 = __nccwpck_require__(5438);
 function getGithubValues() {
     var _a;
-    return github_1.context
-        ? {
-            workflow: github_1.context.workflow,
-            repositoryUrl: (_a = github_1.context.payload.repository) === null || _a === void 0 ? void 0 : _a.html_url,
-            run_id: github_1.context.runId,
-            job: github_1.context.job,
-            actor: github_1.context.actor
-        }
-        : undefined;
+    return {
+        workflow: github_1.context.workflow,
+        repositoryUrl: (_a = github_1.context.payload.repository) === null || _a === void 0 ? void 0 : _a.html_url,
+        run_id: github_1.context.runId,
+        job: github_1.context.job,
+        actor: github_1.context.actor
+    };
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -169,38 +167,29 @@ function getOverallStatus(inputs) {
     }
     return 'success';
 }
-function createNeedsFacts(needs) {
-    return needs.map((n) => {
-        return { name: n.jobName, value: n.result };
-    });
+function createFacts(needs, githubValues, job) {
+    const facts = needs.map((n) => ({ name: n.jobName, value: n.result }));
+    if (job) {
+        facts.push({ name: `${githubValues.job}`, value: job.status });
+    }
+    return facts;
 }
 function createSections(overallStatus, inputs, githubValues) {
-    var _a;
     const sections = [];
     if (inputs.needs.length !== 0) {
         const needsSection = {
-            activityTitle: 'Workflow jobs',
-            activitySubtitle: githubValues
-                ? `Triggered by ${githubValues.actor}`
-                : '',
-            facts: createNeedsFacts(inputs.needs),
+            activityTitle: `Workflow ${githubValues.workflow} result ${overallStatus}`,
+            activitySubtitle: `Triggered by ${githubValues.actor}`,
+            facts: createFacts(inputs.needs, githubValues, inputs.job),
             markdown: false
         };
         sections.push(needsSection);
-    }
-    if (inputs.job) {
-        const jobSection = {
-            activityTitle: `${githubValues ? githubValues === null || githubValues === void 0 ? void 0 : githubValues.job : 'Job'} status: ${(_a = inputs.job) === null || _a === void 0 ? void 0 : _a.status}`,
-            facts: [],
-            markdown: false
-        };
-        sections.push(jobSection);
     }
     return sections;
 }
 function createPotentialAction(inputs, githubValues) {
     const potentialAction = [];
-    if (githubValues) {
+    if (githubValues.repositoryUrl) {
         const workflowAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: 'Workflow run', targets: [
                 Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${githubValues.repositoryUrl}/actions/runs/${githubValues.run_id}` })
             ] });
@@ -218,10 +207,7 @@ function getSummary(inputs, overallStatus, githubValues) {
     if (inputs.title) {
         return inputs.title;
     }
-    else if (githubValues) {
-        return `${githubValues.workflow} was ${overallStatus}`;
-    }
-    return `Workflow run was ${overallStatus}`;
+    return `${githubValues.workflow} was ${overallStatus}`;
 }
 function buildConnectorMessage(inputs, githubValues) {
     const overallStatus = getOverallStatus(inputs);
