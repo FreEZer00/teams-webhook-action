@@ -3,12 +3,13 @@ import axios from 'axios'
 
 async function sendNotification(
   webHookUrl: string,
-  message?: ConnectorMessage,
+  dryRun: boolean,
+  message: ConnectorMessage,
   log?: (logMessage: string) => void,
   errorLog?: (logMessage: string) => void
 ): Promise<void> {
   !log || log(`Connector message ${JSON.stringify(message, null, 2)}`)
-  if (!webHookUrl) {
+  if (!webHookUrl || dryRun) {
     !log || log('Webhook url not defined')
     return
   }

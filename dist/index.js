@@ -48,7 +48,7 @@ function run() {
         try {
             const inputs = getInputs();
             const connectorMessage = (0, webhook_1.buildConnectorMessage)(inputs);
-            yield (0, main_1.sendNotification)(inputs.webhookUrl, connectorMessage, core.info, core.error);
+            yield (0, main_1.sendNotification)(inputs.webhookUrl, true, connectorMessage, core.info, core.error);
         }
         catch (error) {
             if (error instanceof Error)
@@ -171,10 +171,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sendNotification = void 0;
 const axios_1 = __importDefault(__nccwpck_require__(8757));
-function sendNotification(webHookUrl, message, log, errorLog) {
+function sendNotification(webHookUrl, dryRun, message, log, errorLog) {
     return __awaiter(this, void 0, void 0, function* () {
         !log || log(`Connector message ${JSON.stringify(message, null, 2)}`);
-        if (!webHookUrl) {
+        if (!webHookUrl || dryRun) {
             !log || log('Webhook url not defined');
             return;
         }

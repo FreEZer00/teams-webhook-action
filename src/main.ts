@@ -10,6 +10,7 @@ async function run(): Promise<void> {
     const connectorMessage = buildConnectorMessage(inputs)
     await sendNotification(
       inputs.webhookUrl,
+      true,
       connectorMessage,
       core.info,
       core.error
