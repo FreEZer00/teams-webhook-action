@@ -60,7 +60,7 @@ function run() {
             const inputs = getInputs();
             const githubValues = getGithubValues();
             const connectorMessage = (0, webhook_1.buildConnectorMessage)(inputs, githubValues);
-            yield (0, main_1.sendNotification)(inputs.webhookUrl, true, connectorMessage, core.info, core.error);
+            yield (0, main_1.sendNotification)(inputs.webhookUrl, false, connectorMessage, core.info, core.error);
         }
         catch (error) {
             if (error instanceof Error)
