@@ -9,6 +9,7 @@ import {
   Section
 } from '../teamsclient/types'
 import {ActionInputs, GithubValues, NeedsResult, Status} from '../types'
+import {GitHub} from '@actions/github/lib/utils'
 
 function determineColor(status: Status): string {
   if (status === 'failure') {
@@ -39,13 +40,16 @@ function createNeedsFacts(needs: NeedsResult[]): Fact[] {
 
 function createSections(
   overallStatus: Status,
-  inputs: ActionInputs
+  inputs: ActionInputs,
+  githubValues?: GithubValues
 ): Section[] {
   const sections: Section[] = []
   if (inputs.needs.length !== 0) {
     const needsSection: Section = {
-      activityTitle: 'Previous jobs',
-      activitySubtitle: 'Results of previous jobs',
+      activityTitle: 'Workflow jobs',
+      activitySubtitle: githubValues
+        ? `Triggered by ${githubValues.actor}`
+        : '',
       facts: createNeedsFacts(inputs.needs),
       markdown: false
     }
@@ -53,7 +57,9 @@ function createSections(
   }
   if (inputs.job) {
     const jobSection: Section = {
-      activityTitle: `Job status: ${inputs.job?.status}`,
+      activityTitle: `${githubValues ? githubValues?.job : 'Job'} status: ${
+        inputs.job?.status
+      }`,
       facts: [],
       markdown: false
     }
@@ -64,21 +70,23 @@ function createSections(
 
 function createPotentialAction(
   inputs: ActionInputs,
-  githubValues: GithubValues
+  githubValues?: GithubValues
 ): PotentialAction[] {
   const potentialAction: PotentialAction[] = []
 
-  const workflowAction: OpenUriAction = {
-    ...defaultOpenUriAction,
-    name: 'Workflow',
-    targets: [
-      {
-        ...defaultTarget,
-        uri: `${githubValues.repositoryUrl}/actions/workflows/${githubValues.workflow}`
-      }
-    ]
+  if (githubValues) {
+    const workflowAction: OpenUriAction = {
+      ...defaultOpenUriAction,
+      name: 'Workflow run',
+      targets: [
+        {
+          ...defaultTarget,
+          uri: `${githubValues.repositoryUrl}/actions/runs/${githubValues.run_id}`
+        }
+      ]
+    }
+    potentialAction.push(workflowAction)
   }
-  potentialAction.push(workflowAction)
 
   if (inputs.additionalButton) {
     const additionalAction: OpenUriAction = {
@@ -96,16 +104,29 @@ function createPotentialAction(
   return potentialAction
 }
 
+function getSummary(
+  inputs: ActionInputs,
+  overallStatus: Status,
+  githubValues?: GithubValues
+): string {
+  if (inputs.title) {
+    return inputs.title
+  } else if (githubValues) {
+    return `${githubValues.workflow} was ${overallStatus}`
+  }
+  return `Workflow run was ${overallStatus}`
+}
+
 function buildConnectorMessage(
   inputs: ActionInputs,
-  githubValues: GithubValues
+  githubValues?: GithubValues
 ): ConnectorMessage {
   const overallStatus = getOverallStatus(inputs)
   return {
     ...defaultConnectorMessage,
-    summary: inputs.title || `Workflow run was ${overallStatus}`,
+    summary: getSummary(inputs, overallStatus, githubValues),
     themeColor: determineColor(overallStatus),
-    sections: createSections(overallStatus, inputs),
+    sections: createSections(overallStatus, inputs, githubValues),
     potentialAction: createPotentialAction(inputs, githubValues)
   }
 }

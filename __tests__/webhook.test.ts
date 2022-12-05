@@ -8,7 +8,14 @@ import {
   createSuccessNeed
 } from '../src/testutil/util'
 import exp = require('constants')
+import {GithubValues} from '../src/types'
 
+const githubValues: GithubValues = {
+  workflow: 'workflow',
+  job: 'jobName',
+  run_id: 123,
+  actor: 'freezer00'
+}
 describe('Test webhook creation', function () {
   test('expect defaults to be set', () => {
     const connectorMessage = buildConnectorMessage(
@@ -17,7 +24,7 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         title: 'title'
       },
-      {workflow: 'workflow'}
+      githubValues
     )
 
     console.log(JSON.stringify(connectorMessage))
@@ -33,7 +40,7 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         title: 'title'
       },
-      {workflow: 'workflow'}
+      githubValues
     )
 
     console.log(JSON.stringify(connectorMessage))
@@ -49,7 +56,7 @@ describe('Test webhook creation', function () {
         job: createSuccessJob(),
         title: 'title'
       },
-      {workflow: 'workflow'}
+      githubValues
     )
 
     console.log(JSON.stringify(connectorMessage))
@@ -63,7 +70,7 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         title: 'title'
       },
-      {workflow: 'workflow'}
+      githubValues
     )
 
     console.log(JSON.stringify(connectorMessage))
@@ -77,7 +84,7 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         title: 'title'
       },
-      {workflow: 'workflow'}
+      githubValues
     )
 
     console.log(JSON.stringify(connectorMessage))
@@ -93,7 +100,7 @@ describe('Test webhook creation', function () {
         job: createFailureJob(),
         title: 'title'
       },
-      {workflow: 'workflow'}
+      githubValues
     )
 
     console.log(JSON.stringify(connectorMessage))
@@ -108,7 +115,7 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         job: createFailureJob()
       },
-      {workflow: 'workflow'}
+      githubValues
     )
     console.log(JSON.stringify(connectorMessage))
     expect(connectorMessage.summary).toBeTruthy()

@@ -29,6 +29,9 @@ interface JobStatus {
 interface GithubValues {
   workflow: string
   repositoryUrl?: string
+  run_id: number
+  job: string
+  actor: string
 }
 
 type Status = 'success' | 'skipped' | 'failure' | 'cancelled'

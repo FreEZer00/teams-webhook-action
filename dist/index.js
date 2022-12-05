@@ -46,10 +46,15 @@ const webhook_1 = __nccwpck_require__(6223);
 const github_1 = __nccwpck_require__(5438);
 function getGithubValues() {
     var _a;
-    return {
-        workflow: github_1.context.workflow,
-        repositoryUrl: (_a = github_1.context.payload.repository) === null || _a === void 0 ? void 0 : _a.html_url
-    };
+    return github_1.context
+        ? {
+            workflow: github_1.context.workflow,
+            repositoryUrl: (_a = github_1.context.payload.repository) === null || _a === void 0 ? void 0 : _a.html_url,
+            run_id: github_1.context.runId,
+            job: github_1.context.job,
+            actor: github_1.context.actor
+        }
+        : undefined;
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -169,13 +174,15 @@ function createNeedsFacts(needs) {
         return { name: n.jobName, value: n.result };
     });
 }
-function createSections(overallStatus, inputs) {
+function createSections(overallStatus, inputs, githubValues) {
     var _a;
     const sections = [];
     if (inputs.needs.length !== 0) {
         const needsSection = {
-            activityTitle: 'Previous jobs',
-            activitySubtitle: 'Results of previous jobs',
+            activityTitle: 'Workflow jobs',
+            activitySubtitle: githubValues
+                ? `Triggered by ${githubValues.actor}`
+                : '',
             facts: createNeedsFacts(inputs.needs),
             markdown: false
         };
@@ -183,7 +190,7 @@ function createSections(overallStatus, inputs) {
     }
     if (inputs.job) {
         const jobSection = {
-            activityTitle: `Job status: ${(_a = inputs.job) === null || _a === void 0 ? void 0 : _a.status}`,
+            activityTitle: `${githubValues ? githubValues === null || githubValues === void 0 ? void 0 : githubValues.job : 'Job'} status: ${(_a = inputs.job) === null || _a === void 0 ? void 0 : _a.status}`,
             facts: [],
             markdown: false
         };
@@ -193,10 +200,12 @@ function createSections(overallStatus, inputs) {
 }
 function createPotentialAction(inputs, githubValues) {
     const potentialAction = [];
-    const workflowAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: 'Workflow', targets: [
-            Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${githubValues.repositoryUrl}/actions/workflows/${githubValues.workflow}` })
-        ] });
-    potentialAction.push(workflowAction);
+    if (githubValues) {
+        const workflowAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: 'Workflow run', targets: [
+                Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${githubValues.repositoryUrl}/actions/runs/${githubValues.run_id}` })
+            ] });
+        potentialAction.push(workflowAction);
+    }
     if (inputs.additionalButton) {
         const additionalAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: `${inputs.additionalButton.displayName}`, targets: [
                 Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${inputs.additionalButton.url}` })
@@ -205,9 +214,18 @@ function createPotentialAction(inputs, githubValues) {
     }
     return potentialAction;
 }
+function getSummary(inputs, overallStatus, githubValues) {
+    if (inputs.title) {
+        return inputs.title;
+    }
+    else if (githubValues) {
+        return `${githubValues.workflow} was ${overallStatus}`;
+    }
+    return `Workflow run was ${overallStatus}`;
+}
 function buildConnectorMessage(inputs, githubValues) {
     const overallStatus = getOverallStatus(inputs);
-    return Object.assign(Object.assign({}, types_1.defaultConnectorMessage), { summary: inputs.title || `Workflow run was ${overallStatus}`, themeColor: determineColor(overallStatus), sections: createSections(overallStatus, inputs), potentialAction: createPotentialAction(inputs, githubValues) });
+    return Object.assign(Object.assign({}, types_1.defaultConnectorMessage), { summary: getSummary(inputs, overallStatus, githubValues), themeColor: determineColor(overallStatus), sections: createSections(overallStatus, inputs, githubValues), potentialAction: createPotentialAction(inputs, githubValues) });
 }
 exports.buildConnectorMessage = buildConnectorMessage;
 

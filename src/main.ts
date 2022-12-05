@@ -5,11 +5,16 @@ import {parseJob, parseNeeds} from './service/input-parsing'
 import {buildConnectorMessage} from './service/webhook'
 import {context as github} from '@actions/github'
 
-function getGithubValues(): GithubValues {
-  return {
-    workflow: github.workflow,
-    repositoryUrl: github.payload.repository?.html_url
-  }
+function getGithubValues(): GithubValues | undefined {
+  return github
+    ? {
+        workflow: github.workflow,
+        repositoryUrl: github.payload.repository?.html_url,
+        run_id: github.runId,
+        job: github.job,
+        actor: github.actor
+      }
+    : undefined
 }
 
 async function run(): Promise<void> {
