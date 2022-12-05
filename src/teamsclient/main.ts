@@ -4,7 +4,7 @@ import axios from 'axios'
 async function sendNotification(
   webHookUrl: string,
   dryRun: boolean,
-  message?: ConnectorMessage,
+  message: ConnectorMessage,
   log?: (logMessage: string) => void,
   errorLog?: (logMessage: string) => void
 ): Promise<void> {

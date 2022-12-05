@@ -43,11 +43,20 @@ const core = __importStar(__nccwpck_require__(2186));
 const main_1 = __nccwpck_require__(7508);
 const input_parsing_1 = __nccwpck_require__(1241);
 const webhook_1 = __nccwpck_require__(6223);
+const github_1 = __nccwpck_require__(5438);
+function getGithubValues() {
+    var _a;
+    return {
+        workflow: github_1.context.workflow,
+        repositoryUrl: (_a = github_1.context.payload.repository) === null || _a === void 0 ? void 0 : _a.html_url
+    };
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const inputs = getInputs();
-            const connectorMessage = (0, webhook_1.buildConnectorMessage)(inputs);
+            const githubValues = getGithubValues();
+            const connectorMessage = (0, webhook_1.buildConnectorMessage)(inputs, githubValues);
             yield (0, main_1.sendNotification)(inputs.webhookUrl, true, connectorMessage, core.info, core.error);
         }
         catch (error) {
@@ -135,7 +144,6 @@ exports.parseJob = parseJob;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.buildConnectorMessage = void 0;
 const types_1 = __nccwpck_require__(6307);
-const github_1 = __nccwpck_require__(5438);
 function determineColor(status) {
     if (status === 'failure') {
         return '#b80707';
@@ -183,14 +191,12 @@ function createSections(overallStatus, inputs) {
     }
     return sections;
 }
-function createPotentialAction(inputs) {
+function createPotentialAction(inputs, githubValues) {
     const potentialAction = [];
-    if (github_1.context.payload.repository) {
-        const workflowAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: 'Workflow', targets: [
-                Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${github_1.context.payload.repository.html_url}/actions/workflows/${github_1.context.workflow}` })
-            ] });
-        potentialAction.push(workflowAction);
-    }
+    const workflowAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: 'Workflow', targets: [
+            Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${githubValues.repositoryUrl}/actions/workflows/${githubValues.workflow}` })
+        ] });
+    potentialAction.push(workflowAction);
     if (inputs.additionalButton) {
         const additionalAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: `${inputs.additionalButton.displayName}`, targets: [
                 Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${inputs.additionalButton.url}` })
@@ -199,9 +205,9 @@ function createPotentialAction(inputs) {
     }
     return potentialAction;
 }
-function buildConnectorMessage(inputs) {
+function buildConnectorMessage(inputs, githubValues) {
     const overallStatus = getOverallStatus(inputs);
-    return Object.assign(Object.assign({}, types_1.defaultConnectorMessage), { summary: inputs.title || `Workflow run was ${overallStatus}`, themeColor: determineColor(overallStatus), sections: createSections(overallStatus, inputs), potentialAction: createPotentialAction(inputs) });
+    return Object.assign(Object.assign({}, types_1.defaultConnectorMessage), { summary: inputs.title || `Workflow run was ${overallStatus}`, themeColor: determineColor(overallStatus), sections: createSections(overallStatus, inputs), potentialAction: createPotentialAction(inputs, githubValues) });
 }
 exports.buildConnectorMessage = buildConnectorMessage;
 

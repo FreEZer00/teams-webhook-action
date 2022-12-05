@@ -26,7 +26,11 @@ interface JobStatus {
   failure: boolean
   cancelled: boolean
 }
+interface GithubValues {
+  workflow: string
+  repositoryUrl?: string
+}
 
 type Status = 'success' | 'skipped' | 'failure' | 'cancelled'
 
-export {Status, JobStatus, ActionInputs, NeedsResult}
+export {Status, JobStatus, ActionInputs, NeedsResult, GithubValues}

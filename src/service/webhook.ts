@@ -8,8 +8,7 @@ import {
   PotentialAction,
   Section
 } from '../teamsclient/types'
-import {ActionInputs, NeedsResult, Status} from '../types'
-import {context as github} from '@actions/github'
+import {ActionInputs, GithubValues, NeedsResult, Status} from '../types'
 
 function determineColor(status: Status): string {
   if (status === 'failure') {
@@ -63,21 +62,24 @@ function createSections(
   return sections
 }
 
-function createPotentialAction(inputs: ActionInputs): PotentialAction[] {
+function createPotentialAction(
+  inputs: ActionInputs,
+  githubValues: GithubValues
+): PotentialAction[] {
   const potentialAction: PotentialAction[] = []
-  if (github.payload.repository) {
-    const workflowAction: OpenUriAction = {
-      ...defaultOpenUriAction,
-      name: 'Workflow',
-      targets: [
-        {
-          ...defaultTarget,
-          uri: `${github.payload.repository.html_url}/actions/workflows/${github.workflow}`
-        }
-      ]
-    }
-    potentialAction.push(workflowAction)
+
+  const workflowAction: OpenUriAction = {
+    ...defaultOpenUriAction,
+    name: 'Workflow',
+    targets: [
+      {
+        ...defaultTarget,
+        uri: `${githubValues.repositoryUrl}/actions/workflows/${githubValues.workflow}`
+      }
+    ]
   }
+  potentialAction.push(workflowAction)
+
   if (inputs.additionalButton) {
     const additionalAction: OpenUriAction = {
       ...defaultOpenUriAction,
@@ -94,14 +96,17 @@ function createPotentialAction(inputs: ActionInputs): PotentialAction[] {
   return potentialAction
 }
 
-function buildConnectorMessage(inputs: ActionInputs): ConnectorMessage {
+function buildConnectorMessage(
+  inputs: ActionInputs,
+  githubValues: GithubValues
+): ConnectorMessage {
   const overallStatus = getOverallStatus(inputs)
   return {
     ...defaultConnectorMessage,
     summary: inputs.title || `Workflow run was ${overallStatus}`,
     themeColor: determineColor(overallStatus),
     sections: createSections(overallStatus, inputs),
-    potentialAction: createPotentialAction(inputs)
+    potentialAction: createPotentialAction(inputs, githubValues)
   }
 }
 

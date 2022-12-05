@@ -1,13 +1,22 @@
 import * as core from '@actions/core'
 import {sendNotification} from './teamsclient/main'
-import {ActionInputs, JobStatus, NeedsResult} from './types'
+import {ActionInputs, GithubValues, JobStatus, NeedsResult} from './types'
 import {parseJob, parseNeeds} from './service/input-parsing'
 import {buildConnectorMessage} from './service/webhook'
+import {context as github} from '@actions/github'
+
+function getGithubValues(): GithubValues {
+  return {
+    workflow: github.workflow,
+    repositoryUrl: github.payload.repository?.html_url
+  }
+}
 
 async function run(): Promise<void> {
   try {
     const inputs = getInputs()
-    const connectorMessage = buildConnectorMessage(inputs)
+    const githubValues = getGithubValues()
+    const connectorMessage = buildConnectorMessage(inputs, githubValues)
     await sendNotification(
       inputs.webhookUrl,
       true,

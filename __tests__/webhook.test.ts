@@ -11,11 +11,14 @@ import exp = require('constants')
 
 describe('Test webhook creation', function () {
   test('expect defaults to be set', () => {
-    const connectorMessage = buildConnectorMessage({
-      needs: [],
-      webhookUrl: 'url',
-      title: 'title'
-    })
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [],
+        webhookUrl: 'url',
+        title: 'title'
+      },
+      {workflow: 'workflow'}
+    )
 
     console.log(JSON.stringify(connectorMessage))
 
@@ -24,11 +27,14 @@ describe('Test webhook creation', function () {
   })
 
   test('expect color to be set green when no jobs or needs', () => {
-    const connectorMessage = buildConnectorMessage({
-      needs: [],
-      webhookUrl: 'url',
-      title: 'title'
-    })
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [],
+        webhookUrl: 'url',
+        title: 'title'
+      },
+      {workflow: 'workflow'}
+    )
 
     console.log(JSON.stringify(connectorMessage))
 
@@ -36,34 +42,43 @@ describe('Test webhook creation', function () {
   })
 
   test('expect color to be set red when any jobs or need fails', () => {
-    const connectorMessage = buildConnectorMessage({
-      needs: [createFailedNeed()],
-      webhookUrl: 'url',
-      job: createSuccessJob(),
-      title: 'title'
-    })
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [createFailedNeed()],
+        webhookUrl: 'url',
+        job: createSuccessJob(),
+        title: 'title'
+      },
+      {workflow: 'workflow'}
+    )
 
     console.log(JSON.stringify(connectorMessage))
 
     expect(connectorMessage.themeColor).toEqual('#b80707')
   })
   test('expect color to be set red when any need fails', () => {
-    const connectorMessage = buildConnectorMessage({
-      needs: [createFailedNeed()],
-      webhookUrl: 'url',
-      title: 'title'
-    })
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [createFailedNeed()],
+        webhookUrl: 'url',
+        title: 'title'
+      },
+      {workflow: 'workflow'}
+    )
 
     console.log(JSON.stringify(connectorMessage))
 
     expect(connectorMessage.themeColor).toEqual('#b80707')
   })
   test('expect color to be set grey when any jobs or need was cancelled', () => {
-    const connectorMessage = buildConnectorMessage({
-      needs: [createCancelledNeed()],
-      webhookUrl: 'url',
-      title: 'title'
-    })
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [createCancelledNeed()],
+        webhookUrl: 'url',
+        title: 'title'
+      },
+      {workflow: 'workflow'}
+    )
 
     console.log(JSON.stringify(connectorMessage))
 
@@ -71,12 +86,15 @@ describe('Test webhook creation', function () {
   })
 
   test('expect color to be set red when any jobs fails', () => {
-    const connectorMessage = buildConnectorMessage({
-      needs: [createSuccessNeed()],
-      webhookUrl: 'url',
-      job: createFailureJob(),
-      title: 'title'
-    })
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [createSuccessNeed()],
+        webhookUrl: 'url',
+        job: createFailureJob(),
+        title: 'title'
+      },
+      {workflow: 'workflow'}
+    )
 
     console.log(JSON.stringify(connectorMessage))
 
@@ -84,11 +102,14 @@ describe('Test webhook creation', function () {
   })
 
   describe('Test summary is set even though no input', () => {
-    const connectorMessage = buildConnectorMessage({
-      needs: [createSuccessNeed()],
-      webhookUrl: 'url',
-      job: createFailureJob()
-    })
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [createSuccessNeed()],
+        webhookUrl: 'url',
+        job: createFailureJob()
+      },
+      {workflow: 'workflow'}
+    )
     console.log(JSON.stringify(connectorMessage))
     expect(connectorMessage.summary).toBeTruthy()
   })
