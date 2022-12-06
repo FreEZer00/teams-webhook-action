@@ -23,6 +23,7 @@ inputs:
   dry_run:
     description: 'Test action'
     required: false
+    default: 'false'
 runs:
   using: 'node16'
   main: 'dist/index.js'
