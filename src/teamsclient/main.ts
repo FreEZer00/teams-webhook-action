@@ -1,20 +1,28 @@
 import {ConnectorMessage} from './types'
 import axios from 'axios'
 
+function matchUrlPattern(url: string): boolean {
+  const urlPattern =
+    'https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)'
+  const regex = new RegExp(urlPattern)
+  return !!url.match(regex)
+}
 async function sendNotification(
   webHookUrl: string,
   message: ConnectorMessage,
+  dryrun?: boolean,
   log?: (logMessage: string) => void,
   errorLog?: (logMessage: string) => void
 ): Promise<void> {
   !log || log(`Connector message ${JSON.stringify(message, null, 2)}`)
-  if (!webHookUrl) {
-    !log || log('Webhook url not defined')
+  if (dryrun) {
     return
   }
-  const axiosInstance = axios.create()
+  if (!matchUrlPattern(webHookUrl)) {
+    throw new Error('Webhook url not defined properly, not a URL')
+  }
   try {
-    const axiosResponse = await axiosInstance.post(webHookUrl, message)
+    const axiosResponse = await axios.post(webHookUrl, message)
     !log ||
       log(
         `Posted connector message with response: HTTP ${axiosResponse.status}`

@@ -7,7 +7,6 @@ import {
   createSuccessJob,
   createSuccessNeed
 } from '../src/testutil/util'
-import exp = require('constants')
 import {GithubValues} from '../src/types'
 
 const githubValues: GithubValues = {
@@ -22,6 +21,7 @@ describe('Test webhook creation', function () {
       {
         needs: [],
         webhookUrl: 'url',
+        dryRun: false,
         title: 'title'
       },
       githubValues
@@ -38,6 +38,7 @@ describe('Test webhook creation', function () {
       {
         needs: [],
         webhookUrl: 'url',
+        dryRun: false,
         title: 'title'
       },
       githubValues
@@ -53,6 +54,7 @@ describe('Test webhook creation', function () {
       {
         needs: [createFailedNeed()],
         webhookUrl: 'url',
+        dryRun: false,
         job: createSuccessJob(),
         title: 'title'
       },
@@ -68,6 +70,7 @@ describe('Test webhook creation', function () {
       {
         needs: [createFailedNeed()],
         webhookUrl: 'url',
+        dryRun: false,
         title: 'title'
       },
       githubValues
@@ -82,6 +85,7 @@ describe('Test webhook creation', function () {
       {
         needs: [createCancelledNeed()],
         webhookUrl: 'url',
+        dryRun: false,
         title: 'title'
       },
       githubValues
@@ -97,6 +101,7 @@ describe('Test webhook creation', function () {
       {
         needs: [createSuccessNeed()],
         webhookUrl: 'url',
+        dryRun: false,
         job: createFailureJob(),
         title: 'title'
       },
@@ -112,6 +117,7 @@ describe('Test webhook creation', function () {
     const connectorMessage = buildConnectorMessage(
       {
         needs: [createSuccessNeed()],
+        dryRun: false,
         webhookUrl: 'url',
         job: createFailureJob()
       },

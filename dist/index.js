@@ -60,7 +60,7 @@ function run() {
             const inputs = getInputs();
             const githubValues = getGithubValues();
             const connectorMessage = (0, webhook_1.buildConnectorMessage)(inputs, githubValues);
-            yield (0, main_1.sendNotification)(inputs.webhookUrl, connectorMessage, core.info, core.error);
+            yield (0, main_1.sendNotification)(inputs.webhookUrl, connectorMessage, inputs.dryRun, core.info, core.error);
         }
         catch (error) {
             if (error instanceof Error)
@@ -72,6 +72,7 @@ const getInputs = () => {
     const webhookUrl = core.getInput('webhook_url');
     const jobInput = core.getInput('job');
     const needsInput = core.getInput('needs');
+    const dryRun = core.getBooleanInput('dry_run');
     const title = core.getInput('title') !== '' ? core.getInput('title') : undefined;
     const additionalButtonTitle = core.getInput('additional_button_title') !== ''
         ? core.getInput('additional_button_title')
@@ -88,7 +89,8 @@ const getInputs = () => {
         title,
         additionalButton: additionalButtonTitle && additionalButtonUrl
             ? { displayName: additionalButtonTitle, url: additionalButtonUrl }
-            : undefined
+            : undefined,
+        dryRun
     };
 };
 run();
@@ -238,16 +240,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sendNotification = void 0;
 const axios_1 = __importDefault(__nccwpck_require__(8757));
-function sendNotification(webHookUrl, message, log, errorLog) {
+function matchUrlPattern(url) {
+    const urlPattern = 'https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)';
+    const regex = new RegExp(urlPattern);
+    return !!url.match(regex);
+}
+function sendNotification(webHookUrl, message, dryrun, log, errorLog) {
     return __awaiter(this, void 0, void 0, function* () {
         !log || log(`Connector message ${JSON.stringify(message, null, 2)}`);
-        if (!webHookUrl) {
-            !log || log('Webhook url not defined');
+        if (dryrun) {
             return;
         }
-        const axiosInstance = axios_1.default.create();
+        if (!matchUrlPattern(webHookUrl)) {
+            throw new Error('Webhook url not defined properly, not a URL');
+        }
         try {
-            const axiosResponse = yield axiosInstance.post(webHookUrl, message);
+            const axiosResponse = yield axios_1.default.post(webHookUrl, message);
             !log ||
                 log(`Posted connector message with response: HTTP ${axiosResponse.status}`);
         }

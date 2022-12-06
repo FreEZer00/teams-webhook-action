@@ -20,6 +20,9 @@ inputs:
   additional_button_url:
     description: 'URL for optional additional button'
     required: false
+  dry_run:
+    description: 'Test action'
+    required: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

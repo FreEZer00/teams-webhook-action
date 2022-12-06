@@ -23,6 +23,7 @@ async function run(): Promise<void> {
     await sendNotification(
       inputs.webhookUrl,
       connectorMessage,
+      inputs.dryRun,
       core.info,
       core.error
     )
@@ -35,6 +36,7 @@ const getInputs = (): ActionInputs => {
   const webhookUrl = core.getInput('webhook_url')
   const jobInput = core.getInput('job')
   const needsInput = core.getInput('needs')
+  const dryRun = core.getBooleanInput('dry_run')
   const title =
     core.getInput('title') !== '' ? core.getInput('title') : undefined
   const additionalButtonTitle =
@@ -57,7 +59,8 @@ const getInputs = (): ActionInputs => {
     additionalButton:
       additionalButtonTitle && additionalButtonUrl
         ? {displayName: additionalButtonTitle, url: additionalButtonUrl}
-        : undefined
+        : undefined,
+    dryRun
   }
 }
 
