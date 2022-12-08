@@ -33,10 +33,10 @@ jobs:
           needs: ${{ toJson(needs) }}
           job: ${{ toJson(job) }}
           title: Custom title
-          additional_button_title: |
-            Link to Google |
-            TestButton
-          additional_button_url: |
-            https://google.com |
-            https://google.de
+          additional_button_title:
+            - Link to Google
+            - TestButton
+          additional_button_url:
+            - https://google.com
+            - https://google.de
           dry_run: true
