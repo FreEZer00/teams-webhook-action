@@ -57,15 +57,14 @@ function createSections(
   githubValues: GithubValues
 ): Section[] {
   const sections: Section[] = []
-  if (inputs.needs.length !== 0) {
-    const needsSection: Section = {
-      activityTitle: `Workflow "${githubValues.workflow}" ran with result ${overallStatus}`,
-      activitySubtitle: `Triggered by ${githubValues.actor}`,
-      facts: createFacts(inputs.needs, githubValues, inputs.job),
-      markdown: false
-    }
-    sections.push(needsSection)
+  const section: Section = {
+    activityTitle: `Workflow "${githubValues.workflow}" ran with result ${overallStatus}`,
+    activitySubtitle: `Triggered by ${githubValues.actor}`,
+    facts: createFacts(inputs.needs, githubValues, inputs.job),
+    markdown: false
   }
+  sections.push(section)
+
   return sections
 }
 
