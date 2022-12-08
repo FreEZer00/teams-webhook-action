@@ -74,12 +74,14 @@ const getInputs = () => {
     const needsInput = core.getInput('needs');
     const dryRun = core.getBooleanInput('dry_run');
     const title = core.getInput('title') !== '' ? core.getInput('title') : undefined;
-    const additionalButtonTitle = core.getInput('additional_button_title') !== ''
-        ? core.getInput('additional_button_title')
-        : undefined;
-    const additionalButtonUrl = core.getInput('additional_button_url') !== ''
-        ? core.getInput('additional_button_url')
-        : undefined;
+    const additionalButtonTitle = core.getMultilineInput('additional_button_title');
+    const additionalButtonUrl = core.getMultilineInput('additional_button_url');
+    if (additionalButtonTitle.length !== additionalButtonUrl.length) {
+        throw new Error('Number of additional buttons titles and urls does not match ');
+    }
+    const additionalButtons = additionalButtonUrl.map((url, index) => {
+        return { displayName: additionalButtonTitle[index], url };
+    });
     const job = (0, input_parsing_1.parseJob)(jobInput);
     const needs = (0, input_parsing_1.parseNeeds)(needsInput);
     return {
@@ -87,9 +89,7 @@ const getInputs = () => {
         needs,
         job,
         title,
-        additionalButton: additionalButtonTitle && additionalButtonUrl
-            ? { displayName: additionalButtonTitle, url: additionalButtonUrl }
-            : undefined,
+        additionalButtons,
         dryRun
     };
 };
@@ -197,9 +197,9 @@ function createPotentialAction(inputs, githubValues) {
             ] });
         potentialAction.push(workflowAction);
     }
-    if (inputs.additionalButton) {
-        const additionalAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: `${inputs.additionalButton.displayName}`, targets: [
-                Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${inputs.additionalButton.url}` })
+    for (const button of inputs.additionalButtons) {
+        const additionalAction = Object.assign(Object.assign({}, types_1.defaultOpenUriAction), { name: `${button.displayName}`, targets: [
+                Object.assign(Object.assign({}, types_1.defaultTarget), { uri: `${button.url}` })
             ] });
         potentialAction.push(additionalAction);
     }
