@@ -8,7 +8,7 @@ interface ActionInputs {
   job?: JobStatus
   needs: NeedsResult[]
   title?: string
-  additionalButton?: AdditionalButton
+  additionalButtons: AdditionalButton[]
   dryRun: boolean
 }
 
@@ -37,4 +37,11 @@ interface GithubValues {
 
 type Status = 'success' | 'skipped' | 'failure' | 'cancelled'
 
-export {Status, JobStatus, ActionInputs, NeedsResult, GithubValues}
+export {
+  Status,
+  JobStatus,
+  ActionInputs,
+  NeedsResult,
+  GithubValues,
+  AdditionalButton
+}

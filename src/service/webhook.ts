@@ -89,14 +89,14 @@ function createPotentialAction(
     potentialAction.push(workflowAction)
   }
 
-  if (inputs.additionalButton) {
+  for (const button of inputs.additionalButtons) {
     const additionalAction: OpenUriAction = {
       ...defaultOpenUriAction,
-      name: `${inputs.additionalButton.displayName}`,
+      name: `${button.displayName}`,
       targets: [
         {
           ...defaultTarget,
-          uri: `${inputs.additionalButton.url}`
+          uri: `${button.url}`
         }
       ]
     }

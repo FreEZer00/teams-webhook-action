@@ -22,7 +22,8 @@ describe('Test webhook creation', function () {
         needs: [],
         webhookUrl: 'url',
         dryRun: false,
-        title: 'title'
+        title: 'title',
+        additionalButtons: []
       },
       githubValues
     )
@@ -39,7 +40,8 @@ describe('Test webhook creation', function () {
         needs: [],
         webhookUrl: 'url',
         dryRun: false,
-        title: 'title'
+        title: 'title',
+        additionalButtons: []
       },
       githubValues
     )
@@ -56,7 +58,8 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         dryRun: false,
         job: createSuccessJob(),
-        title: 'title'
+        title: 'title',
+        additionalButtons: []
       },
       githubValues
     )
@@ -71,7 +74,8 @@ describe('Test webhook creation', function () {
         needs: [createFailedNeed()],
         webhookUrl: 'url',
         dryRun: false,
-        title: 'title'
+        title: 'title',
+        additionalButtons: []
       },
       githubValues
     )
@@ -86,7 +90,8 @@ describe('Test webhook creation', function () {
         needs: [createCancelledNeed()],
         webhookUrl: 'url',
         dryRun: false,
-        title: 'title'
+        title: 'title',
+        additionalButtons: []
       },
       githubValues
     )
@@ -103,7 +108,8 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         dryRun: false,
         job: createFailureJob(),
-        title: 'title'
+        title: 'title',
+        additionalButtons: []
       },
       githubValues
     )
@@ -113,17 +119,34 @@ describe('Test webhook creation', function () {
     expect(connectorMessage.themeColor).toEqual('#b80707')
   })
 
-  describe('Test summary is set even though no input', () => {
+  test('Test summary is set even though no input', () => {
     const connectorMessage = buildConnectorMessage(
       {
         needs: [createSuccessNeed()],
         dryRun: false,
         webhookUrl: 'url',
-        job: createFailureJob()
+        job: createFailureJob(),
+        additionalButtons: []
       },
       githubValues
     )
     console.log(JSON.stringify(connectorMessage))
     expect(connectorMessage.summary).toBeTruthy()
+  })
+
+  test('Test additionalButtons', () => {
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [createSuccessNeed()],
+        dryRun: false,
+        webhookUrl: 'url',
+        job: createFailureJob(),
+        additionalButtons: [{url: 'url', displayName: 'name'}]
+      },
+      githubValues
+    )
+    console.log(JSON.stringify(connectorMessage))
+    expect(connectorMessage.potentialAction).not.toBeUndefined()
+    expect(connectorMessage.potentialAction?.length).toEqual(1)
   })
 })

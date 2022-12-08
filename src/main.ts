@@ -1,6 +1,12 @@
 import * as core from '@actions/core'
 import {sendNotification} from './teamsclient/main'
-import {ActionInputs, GithubValues, JobStatus, NeedsResult} from './types'
+import {
+  ActionInputs,
+  AdditionalButton,
+  GithubValues,
+  JobStatus,
+  NeedsResult
+} from './types'
 import {parseJob, parseNeeds} from './service/input-parsing'
 import {buildConnectorMessage} from './service/webhook'
 import {context as github} from '@actions/github'
@@ -39,14 +45,21 @@ const getInputs = (): ActionInputs => {
   const dryRun = core.getBooleanInput('dry_run')
   const title =
     core.getInput('title') !== '' ? core.getInput('title') : undefined
-  const additionalButtonTitle =
-    core.getInput('additional_button_title') !== ''
-      ? core.getInput('additional_button_title')
-      : undefined
-  const additionalButtonUrl =
-    core.getInput('additional_button_url') !== ''
-      ? core.getInput('additional_button_url')
-      : undefined
+  const additionalButtonTitle = core.getMultilineInput(
+    'additional_button_title'
+  )
+  const additionalButtonUrl = core.getMultilineInput('additional_button_url')
+
+  if (additionalButtonTitle.length !== additionalButtonUrl.length) {
+    throw new Error(
+      'Number of additional buttons titles and urls does not match '
+    )
+  }
+  const additionalButtons: AdditionalButton[] = additionalButtonUrl.map(
+    (url, index): AdditionalButton => {
+      return {displayName: additionalButtonTitle[index], url}
+    }
+  )
 
   const job: JobStatus | undefined = parseJob(jobInput)
   const needs: NeedsResult[] = parseNeeds(needsInput)
@@ -56,10 +69,7 @@ const getInputs = (): ActionInputs => {
     needs,
     job,
     title,
-    additionalButton:
-      additionalButtonTitle && additionalButtonUrl
-        ? {displayName: additionalButtonTitle, url: additionalButtonUrl}
-        : undefined,
+    additionalButtons,
     dryRun
   }
 }
