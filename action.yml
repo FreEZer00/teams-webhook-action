@@ -15,10 +15,10 @@ inputs:
     description: 'JSON parsed needs context'
     required: false
   additional_button_title:
-    description: 'Display name for optional additional button'
+    description: 'Display names for optional additional buttons'
     required: false
   additional_button_url:
-    description: 'URL for optional additional button'
+    description: 'URLs for optional additional buttons'
     required: false
   dry_run:
     description: 'Test action'
