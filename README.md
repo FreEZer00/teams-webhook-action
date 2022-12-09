@@ -53,7 +53,7 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v1
-      - uses: freezer00/teams-webhook@v1
+      - uses: freezer00/teams-webhook-action@v1.0.0
         with:
           webhook_url: ${{secrets.webhook}}
           needs: ${{ toJson(needs) }}
