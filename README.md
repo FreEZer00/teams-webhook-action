@@ -1,105 +1,91 @@
+<h1 align="center">Microsoft Teams Webhook Action </h1>
+
 <p align="center">
-  <a href="https://github.com/actions/typescript-action/actions"><img alt="typescript-action status" src="https://github.com/actions/typescript-action/workflows/build-test/badge.svg"></a>
+  <a href="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/test.yml"><img alt="typescript-action status" src="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/test.yml/badge.svg"></a>
+  <a href="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/codeql-analysis.yml"><img alt="typescript-action status" src="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/codeql-analysis.yml/badge.svg"></a>
 </p>
 
-# Create a JavaScript Action using TypeScript
+-------
 
-Use this template to bootstrap the creation of a TypeScript action.:rocket:
+<p align="center">
+    <a href="#whats-included">What's included 🚀</a> &bull;
+    <a href="#setup">Setup 🛠️</a> &bull;
+    <a href="#sample">Sample 🖥️</a> &bull;
+    <a href="#license">License 📓</a>
+</p>
 
-This template includes compilation support, tests, a validation workflow, publishing, and versioning guidance.  
+-------
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+## What's included
 
-## Create an action from this template
+- Teams Webhook client
+- Supports for additional action buttons
+- Automatic status deduction from job/needs results
+- Dry run debugging option
+- Type safety
 
-Click the `Use this Template` and provide the new repo details for your action
+This action sends a defined message card to an incoming teams webhook.
 
-## Code in Main
+Inspired by actions from [Skitionek](https://github.com/Skitionek/notify-microsoft-teams)
+and [homoluctus](https://github.com/lazy-actions/slatify).
 
-> First, you'll need to have a reasonably modern version of `node` handy. This won't work with versions older than 9, for instance.
+## Setup
 
-Install the dependencies  
-```bash
-$ npm install
+### Configure the workflow
+
+```yml
+name: build
+on:
+  pull_request:
+
+jobs:
+  testJob:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v3
+    - run: |
+        exit 0
+  build:
+    name: Checkout and notify
+    needs: [ TestJob ]
+    if: ${{always()}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v1
+      - uses: freezer00/teams-webhook-action@v1
+        with:
+          webhook_url: ${{secrets.webhook}}
+          needs: ${{ toJson(needs) }}
+          job: ${{ toJson(job) }}
+          title: Custom title
+          additional_button_title: |-
+            Link to Google
+            Link to Microsoft
+          additional_button_url: |-
+            https://google.com
+            https://www.microsoft.com/de-de/microsoft-teams
+          dry_run: false
 ```
 
-Build the typescript and package it for distribution
-```bash
-$ npm run build && npm run package
-```
+### Inputs
 
-Run the tests :heavy_check_mark:  
-```bash
-$ npm test
+| **Input**                 | **Required** | **Description**                                                                                                                                                                           |
+|---------------------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `webhook_url`             | **Required** | [Teams Webhook](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook) - url of the incoming webhook (should be store in secrets) |
+| `title`                   | Optional     | Custom title for the message card. Default `Workflow \"<workflow-name/>\" ran with result <result/>`                                                                                      |
+| `job`                     | Optional     | JSON formatted job `toJson(job)` (current job)                                                                                                                                            |
+| `needs`                   | Optional     | JSON formatted needs `toJson(needs)` (previous required jobs)                                                                                                                             |
+| `additional_button_title` | Optional     | Multiline input for additional titles of potential actions on message card see [test.yml](.github/workflows/test.yml))                                                                    |
+| `additional_button_url`   | Optional     | Multiline input for additional links of potential actions on message card see [test.yml](.github/workflows/test.yml))                                                                     |
+| `dry_run`                 | Optional     | Skip the sending of the webhook to Teams (default `false`)                                                                                                                                |
 
- PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
+## Sample
 
-...
-```
+<div>
+  <img src=".github/images/example.png" alt="example_image"/>
+</div>
 
-## Change action.yml
+## License
 
-The action.yml defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-import * as core from '@actions/core';
-...
-
-async function run() {
-  try { 
-      ...
-  } 
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
-
-## Publish to a distribution branch
-
-Actions are run from GitHub repos so we will checkin the packed dist folder. 
-
-Then run [ncc](https://github.com/zeit/ncc) and push the results:
-```bash
-$ npm run package
-$ git add dist
-$ git commit -a -m "prod dependencies"
-$ git push origin releases/v1
-```
-
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket: 
-
-See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
-
-## Validate
-
-You can now validate the action by referencing `./` in a workflow in your repo (see [test.yml](.github/workflows/test.yml))
-
-```yaml
-uses: ./
-with:
-  milliseconds: 1000
-```
-
-See the [actions tab](https://github.com/actions/typescript-action/actions) for runs of this action! :rocket:
-
-## Usage:
-
-After testing you can [create a v1 tag](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md) to reference the stable and latest V1 action
+[The MIT License (MIT)](LICENSE)

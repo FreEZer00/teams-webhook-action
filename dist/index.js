@@ -179,7 +179,7 @@ function createFacts(needs, githubValues, job) {
 function createSections(overallStatus, inputs, githubValues) {
     const sections = [];
     const section = {
-        activityTitle: `Workflow "${githubValues.workflow}" ran with result ${overallStatus}`,
+        activityTitle: getSummary(inputs, overallStatus, githubValues),
         activitySubtitle: `Triggered by ${githubValues.actor}`,
         facts: createFacts(inputs.needs, githubValues, inputs.job),
         markdown: false
@@ -207,7 +207,7 @@ function getSummary(inputs, overallStatus, githubValues) {
     if (inputs.title) {
         return inputs.title;
     }
-    return `${githubValues.workflow} was ${overallStatus}`;
+    return `Workflow "${githubValues.workflow}" ran with result ${overallStatus}`;
 }
 function buildConnectorMessage(inputs, githubValues) {
     const overallStatus = getOverallStatus(inputs);

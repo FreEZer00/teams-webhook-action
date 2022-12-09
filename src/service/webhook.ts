@@ -58,7 +58,7 @@ function createSections(
 ): Section[] {
   const sections: Section[] = []
   const section: Section = {
-    activityTitle: `Workflow "${githubValues.workflow}" ran with result ${overallStatus}`,
+    activityTitle: getSummary(inputs, overallStatus, githubValues),
     activitySubtitle: `Triggered by ${githubValues.actor}`,
     facts: createFacts(inputs.needs, githubValues, inputs.job),
     markdown: false
@@ -112,7 +112,7 @@ function getSummary(
   if (inputs.title) {
     return inputs.title
   }
-  return `${githubValues.workflow} was ${overallStatus}`
+  return `Workflow "${githubValues.workflow}" ran with result ${overallStatus}`
 }
 
 function buildConnectorMessage(
