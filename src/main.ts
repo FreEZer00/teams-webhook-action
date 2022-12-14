@@ -17,7 +17,8 @@ function getGithubValues(): GithubValues {
     repositoryUrl: github.payload.repository?.html_url,
     run_id: github.runId,
     job: github.job,
-    actor: github.actor
+    actor: github.actor,
+    repoName: github.payload.repository?.name
   }
 }
 

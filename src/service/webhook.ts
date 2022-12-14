@@ -58,7 +58,7 @@ function createSections(
 ): Section[] {
   const sections: Section[] = []
   const section: Section = {
-    activityTitle: `${githubValues.repositoryUrl} >> ${getSummary(
+    activityTitle: `${githubValues.repoName} >> ${getSummary(
       inputs,
       overallStatus,
       githubValues

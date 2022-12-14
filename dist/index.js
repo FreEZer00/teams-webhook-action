@@ -45,13 +45,14 @@ const input_parsing_1 = __nccwpck_require__(1241);
 const webhook_1 = __nccwpck_require__(6223);
 const github_1 = __nccwpck_require__(5438);
 function getGithubValues() {
-    var _a;
+    var _a, _b;
     return {
         workflow: github_1.context.workflow,
         repositoryUrl: (_a = github_1.context.payload.repository) === null || _a === void 0 ? void 0 : _a.html_url,
         run_id: github_1.context.runId,
         job: github_1.context.job,
-        actor: github_1.context.actor
+        actor: github_1.context.actor,
+        repoName: (_b = github_1.context.payload.repository) === null || _b === void 0 ? void 0 : _b.name
     };
 }
 function run() {
@@ -179,7 +180,7 @@ function createFacts(needs, githubValues, job) {
 function createSections(overallStatus, inputs, githubValues) {
     const sections = [];
     const section = {
-        activityTitle: `${githubValues.repositoryUrl} >> ${getSummary(inputs, overallStatus, githubValues)}`,
+        activityTitle: `${githubValues.repoName} >> ${getSummary(inputs, overallStatus, githubValues)}`,
         activitySubtitle: `Triggered by ${githubValues.actor}`,
         facts: createFacts(inputs.needs, githubValues, inputs.job),
         markdown: false

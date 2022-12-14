@@ -33,6 +33,7 @@ interface GithubValues {
   run_id: number
   job: string
   actor: string
+  repoName?: string
 }
 
 type Status = 'success' | 'skipped' | 'failure' | 'cancelled'
