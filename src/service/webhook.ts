@@ -58,7 +58,11 @@ function createSections(
 ): Section[] {
   const sections: Section[] = []
   const section: Section = {
-    activityTitle: getSummary(inputs, overallStatus, githubValues),
+    activityTitle: `${githubValues.repositoryUrl} >> ${getSummary(
+      inputs,
+      overallStatus,
+      githubValues
+    )}`,
     activitySubtitle: `Triggered by ${githubValues.actor}`,
     facts: createFacts(inputs.needs, githubValues, inputs.job),
     markdown: false
