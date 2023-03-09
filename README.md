@@ -3,6 +3,7 @@
 <p align="center">
   <a href="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/test.yml"><img alt="typescript-action status" src="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/test.yml/badge.svg"></a>
   <a href="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/codeql-analysis.yml"><img alt="typescript-action status" src="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/codeql-analysis.yml/badge.svg"></a>
+  <a href="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/check-dist.yml"><img alt="typescript-action status" src="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/check-dist.yml/badge.svg"></a>
 </p>
 
 -------
