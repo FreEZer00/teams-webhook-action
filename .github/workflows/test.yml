@@ -23,7 +23,7 @@ jobs:
           exit 0
   verifyAction: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
-    needs: [ TestJob ]
+    needs: [ testJob ]
     if: ${{always()}}
     steps:
       - uses: actions/checkout@v3
