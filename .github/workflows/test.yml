@@ -40,6 +40,31 @@ jobs:
             https://google.com
             https://google.de
           dry_run: true
+  failingTestJob:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          exit 1
+  verifyActionFailingNeed:
+    runs-on: ubuntu-latest
+    needs: [ failingTestJob ]
+    if: ${{always()}}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          webhook_url: ${{secrets.webhook}}
+          needs: ${{ toJson(needs) }}
+          job: ${{ toJson(job) }}
+          title: Failed job notification
+          additional_button_title: |-
+            Link to Google
+            TestButton
+          additional_button_url: |-
+            https://google.com
+            https://google.de
+          dry_run: true
   verifyActionWithoutOptionals: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
     if: ${{always()}}
