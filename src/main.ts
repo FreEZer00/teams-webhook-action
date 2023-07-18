@@ -44,6 +44,7 @@ const getInputs = (): ActionInputs => {
   const jobInput = core.getInput('job')
   const needsInput = core.getInput('needs')
   const dryRun = core.getBooleanInput('dry_run')
+  const hideFacts = core.getBooleanInput('hide_facts')
   const title =
     core.getInput('title') !== '' ? core.getInput('title') : undefined
   const additionalButtonTitle = core.getMultilineInput(
@@ -71,6 +72,7 @@ const getInputs = (): ActionInputs => {
     job,
     title,
     additionalButtons,
+    hideFacts,
     dryRun
   }
 }

@@ -20,6 +20,9 @@ inputs:
   additional_button_url:
     description: 'URLs for optional additional buttons'
     required: false
+  hide_facts:
+    description: 'Flag to keep notification short and not display details about needs'
+    default: 'false'
   dry_run:
     description: 'Test action'
     required: false

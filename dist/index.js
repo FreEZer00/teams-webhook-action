@@ -74,6 +74,7 @@ const getInputs = () => {
     const jobInput = core.getInput('job');
     const needsInput = core.getInput('needs');
     const dryRun = core.getBooleanInput('dry_run');
+    const hideFacts = core.getBooleanInput('hide_facts');
     const title = core.getInput('title') !== '' ? core.getInput('title') : undefined;
     const additionalButtonTitle = core.getMultilineInput('additional_button_title');
     const additionalButtonUrl = core.getMultilineInput('additional_button_url');
@@ -91,6 +92,7 @@ const getInputs = () => {
         job,
         title,
         additionalButtons,
+        hideFacts,
         dryRun
     };
 };
@@ -182,7 +184,9 @@ function createSections(overallStatus, inputs, githubValues) {
     const section = {
         activityTitle: `${githubValues.repoName} >> ${getSummary(inputs, overallStatus, githubValues)}`,
         activitySubtitle: `Triggered by ${githubValues.actor}`,
-        facts: createFacts(inputs.needs, githubValues, inputs.job),
+        facts: inputs.hideFacts
+            ? []
+            : createFacts(inputs.needs, githubValues, inputs.job),
         markdown: false
     };
     sections.push(section);
