@@ -9,6 +9,7 @@ interface ActionInputs {
   needs: NeedsResult[]
   title?: string
   additionalButtons: AdditionalButton[]
+  hideFacts: boolean
   dryRun: boolean
 }
 

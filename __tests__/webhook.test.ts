@@ -23,7 +23,8 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         dryRun: false,
         title: 'title',
-        additionalButtons: []
+        additionalButtons: [],
+        hideFacts: false
       },
       githubValues
     )
@@ -41,7 +42,8 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         dryRun: false,
         title: 'title',
-        additionalButtons: []
+        additionalButtons: [],
+        hideFacts: false
       },
       githubValues
     )
@@ -59,7 +61,8 @@ describe('Test webhook creation', function () {
         dryRun: false,
         job: createSuccessJob(),
         title: 'title',
-        additionalButtons: []
+        additionalButtons: [],
+        hideFacts: false
       },
       githubValues
     )
@@ -75,7 +78,8 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         dryRun: false,
         title: 'title',
-        additionalButtons: []
+        additionalButtons: [],
+        hideFacts: false
       },
       githubValues
     )
@@ -91,7 +95,8 @@ describe('Test webhook creation', function () {
         webhookUrl: 'url',
         dryRun: false,
         title: 'title',
-        additionalButtons: []
+        additionalButtons: [],
+        hideFacts: false
       },
       githubValues
     )
@@ -109,7 +114,8 @@ describe('Test webhook creation', function () {
         dryRun: false,
         job: createFailureJob(),
         title: 'title',
-        additionalButtons: []
+        additionalButtons: [],
+        hideFacts: false
       },
       githubValues
     )
@@ -126,7 +132,8 @@ describe('Test webhook creation', function () {
         dryRun: false,
         webhookUrl: 'url',
         job: createFailureJob(),
-        additionalButtons: []
+        additionalButtons: [],
+        hideFacts: false
       },
       githubValues
     )
@@ -141,12 +148,32 @@ describe('Test webhook creation', function () {
         dryRun: false,
         webhookUrl: 'url',
         job: createFailureJob(),
-        additionalButtons: [{url: 'url', displayName: 'name'}]
+        additionalButtons: [{url: 'url', displayName: 'name'}],
+        hideFacts: false
       },
       githubValues
     )
     console.log(JSON.stringify(connectorMessage))
     expect(connectorMessage.potentialAction).not.toBeUndefined()
     expect(connectorMessage.potentialAction?.length).toEqual(1)
+  })
+
+  test('expect facts to be empty when hideFacts flag is true', () => {
+    const connectorMessage = buildConnectorMessage(
+      {
+        needs: [createSuccessNeed()],
+        webhookUrl: 'url',
+        dryRun: false,
+        job: createFailureJob(),
+        title: 'title',
+        additionalButtons: [],
+        hideFacts: true
+      },
+      githubValues
+    )
+
+    console.log(JSON.stringify(connectorMessage))
+
+    expect(connectorMessage.sections?.at(0)?.facts.length).toEqual(0)
   })
 })

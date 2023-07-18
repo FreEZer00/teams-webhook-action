@@ -20,6 +20,7 @@ test('wait 500 ms', async () => {
 // shows how the runner will run a javascript action with env / stdout protocol
 test('test runs', () => {
   process.env['INPUT_DRY_RUN'] = String(true)
+  process.env['INPUT_HIDE_FACTS'] = String(false)
 
   const np = process.execPath
   const ip = path.join(__dirname, '..', 'lib', 'main.js')

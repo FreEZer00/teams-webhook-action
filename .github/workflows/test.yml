@@ -40,6 +40,19 @@ jobs:
             https://google.com
             https://google.de
           dry_run: true
+  verifyActionWithOutFacts: # make sure the action works on a clean machine without building
+    runs-on: ubuntu-latest
+    needs: [ testJob ]
+    if: ${{always()}}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          webhook_url: ${{secrets.webhook}}
+          needs: ${{ toJson(needs) }}
+          job: ${{ toJson(job) }}
+          hide_facts: true
+          dry_run: true
   verifyActionWithoutOptionals: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
     if: ${{always()}}
