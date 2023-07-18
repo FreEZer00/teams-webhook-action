@@ -66,19 +66,21 @@ jobs:
           additional_button_url: |-
             https://google.com
             https://www.microsoft.com/de-de/microsoft-teams
+          hide_facts: false
           dry_run: false
 ```
 
 ### Inputs
 
 | **Input**                 | **Required** | **Description**                                                                                                                                                                           |
-|---------------------------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `webhook_url`             | **Required** | [Teams Webhook](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook) - url of the incoming webhook (should be store in secrets) |
 | `title`                   | Optional     | Custom title for the message card. Default `Workflow \"<workflow-name/>\" ran with result <result/>`                                                                                      |
 | `job`                     | Optional     | JSON formatted job `toJson(job)` (current job)                                                                                                                                            |
 | `needs`                   | Optional     | JSON formatted needs `toJson(needs)` (previous required jobs)                                                                                                                             |
 | `additional_button_title` | Optional     | Multiline input for additional titles of potential actions on message card see [test.yml](.github/workflows/test.yml))                                                                    |
 | `additional_button_url`   | Optional     | Multiline input for additional links of potential actions on message card see [test.yml](.github/workflows/test.yml))                                                                     |
+| `hide_facts`              | Optional     | Keept the notification short and omit the facts (needs) in the message card (default `false`)                                                                                             |
 | `dry_run`                 | Optional     | Skip the sending of the webhook to Teams (default `false`)                                                                                                                                |
 
 ## Sample
