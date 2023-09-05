@@ -10,7 +10,7 @@ jobs:
   build: # make sure build/ci work properly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           npm install
       - run: |
@@ -18,7 +18,7 @@ jobs:
   testJob:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: |
           exit 0
   verifyAction: # make sure the action works on a clean machine without building
@@ -26,7 +26,7 @@ jobs:
     needs: [ testJob ]
     if: ${{always()}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
@@ -45,7 +45,7 @@ jobs:
     needs: [ testJob ]
     if: ${{always()}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{always()}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
