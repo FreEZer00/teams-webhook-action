@@ -43,9 +43,9 @@ jobs:
         id: build
         run: npm run bundle
 
-      # This will fail the workflow if the PR wasn't created by Dependabot.
       - name: Compare Directories
         id: diff
+        continue-on-error: true
         run: |
           if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt "0" ]; then
             echo "Detected uncommitted changes after build. See status below:"
@@ -55,10 +55,31 @@ jobs:
 
       # If `dist/` was different than expected, and this was not a Dependabot
       # PR, upload the expected version as a workflow artifact.
-      - if: ${{ failure() && steps.diff.outcome == 'failure' }}
+      - if: ${{ failure() || steps.diff.outcome == 'failure' }}
         name: Upload Artifact
         id: upload
         uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
+      - name: Fetch Dependabot metadata
+        if: ${{ steps.diff.outcome == 'failure' && github.actor == 'dependabot[bot]' }}
+        id: dependabot-metadata
+        uses: dependabot/fetch-metadata@v1
+      - name: git update dist
+        if: ${{ steps.dependabot-metadata.outputs.package-ecosystem == 'npm' && steps.diff.outcome == 'failure'  && github.actor == 'dependabot[bot]' }}
+        run: |
+          git config --global user.name 'dependabot[bot]'
+          git config --global user.email '${{ secrets.DEPENDABOT_MAIL }}'
+          git remote set-url origin https://x-access-token:${{ secrets.DEPENDABOT_UPDATE_DIST_PAT }}@github.com/$GITHUB_REPOSITORY
+          git add dist/
+          git commit -m "updated dist due to dependency upgrade"
+          git push -u origin HEAD:${{ github.event.pull_request.head.ref }}
+      - name: fail if not dependabot
+        if: ${{ steps.dependabot-metadata.outputs.package-ecosystem == 'npm' && steps.diff.outcome == 'failure'  && github.actor != 'dependabot[bot]' }}
+        run: |
+          if [ "$(git diff --ignore-space-at-eol --text dist/ | wc -l)" -gt "0" ]; then
+            echo "Detected uncommitted changes after build. See status below:"
+            git diff --ignore-space-at-eol --text dist/
+            exit 1
+          fi
