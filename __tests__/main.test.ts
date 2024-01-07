@@ -99,6 +99,7 @@ describe('action', () => {
       infoMock,
       errorMock
     )
+    expect(setFailedMock).not.toHaveBeenCalled()
   })
 
   // it('sets the time output', async () => {
