@@ -43,10 +43,10 @@ function createFacts(
   job?: JobStatus
 ): Fact[] {
   const facts: Fact[] = needs.map(
-    (n): Fact => ({name: n.jobName, value: n.result})
+    (n): Fact => ({ name: n.jobName, value: n.result })
   )
   if (job) {
-    facts.push({name: `${githubValues.job}`, value: job.status})
+    facts.push({ name: `${githubValues.job}`, value: job.status })
   }
   return facts
 }
@@ -135,4 +135,4 @@ function buildConnectorMessage(
   }
 }
 
-export {buildConnectorMessage}
+export { buildConnectorMessage }

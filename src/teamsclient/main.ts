@@ -1,4 +1,4 @@
-import {ConnectorMessage} from './types'
+import { ConnectorMessage } from './types'
 import axios from 'axios'
 
 function matchUrlPattern(url: string): boolean {
@@ -38,4 +38,4 @@ async function sendNotification(
   }
 }
 
-export {sendNotification}
+export { sendNotification }

@@ -1,5 +1,5 @@
-import {buildConnectorMessage} from '../src/service/webhook'
-import {expect, test} from '@jest/globals'
+import { buildConnectorMessage } from '../src/service/webhook'
+import { expect, test } from '@jest/globals'
 import {
   createCancelledNeed,
   createFailedNeed,
@@ -7,7 +7,7 @@ import {
   createSuccessJob,
   createSuccessNeed
 } from '../src/testutil/util'
-import {GithubValues} from '../src/types'
+import { GithubValues } from '../src/types'
 
 const githubValues: GithubValues = {
   workflow: 'workflow',
@@ -125,7 +125,7 @@ describe('Test webhook creation', function () {
     expect(connectorMessage.themeColor).toEqual('#b80707')
   })
 
-  test('Test summary is set even though no input', () => {
+  test('summary is set even though no input', () => {
     const connectorMessage = buildConnectorMessage(
       {
         needs: [createSuccessNeed()],
@@ -141,14 +141,14 @@ describe('Test webhook creation', function () {
     expect(connectorMessage.summary).toBeTruthy()
   })
 
-  test('Test additionalButtons', () => {
+  test('additionalButtons', () => {
     const connectorMessage = buildConnectorMessage(
       {
         needs: [createSuccessNeed()],
         dryRun: false,
         webhookUrl: 'url',
         job: createFailureJob(),
-        additionalButtons: [{url: 'url', displayName: 'name'}],
+        additionalButtons: [{ url: 'url', displayName: 'name' }],
         hideFacts: false
       },
       githubValues

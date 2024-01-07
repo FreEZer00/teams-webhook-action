@@ -1,4 +1,4 @@
-import {JobStatus, NeedsResult} from '../types'
+import { JobStatus, NeedsResult } from '../types'
 
 function parseNeeds(needs: string): NeedsResult[] {
   if (needs === '') {
@@ -33,4 +33,4 @@ function parseJob(job: string): JobStatus | undefined {
   }
 }
 
-export {parseJob, parseNeeds}
+export { parseJob, parseNeeds }
