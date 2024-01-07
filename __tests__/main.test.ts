@@ -59,8 +59,12 @@ describe('action', () => {
     infoMock = jest.spyOn(core, 'info').mockImplementation()
     errorMock = jest.spyOn(core, 'error').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-    getBooleanInputMock = jest.spyOn(core, 'getBooleanInput').mockImplementation()
-    getMultilineInputMock = jest.spyOn(core, 'getMultilineInput').mockImplementation()
+    getBooleanInputMock = jest
+      .spyOn(core, 'getBooleanInput')
+      .mockImplementation()
+    getMultilineInputMock = jest
+      .spyOn(core, 'getMultilineInput')
+      .mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
   })
 
@@ -81,7 +85,7 @@ describe('action', () => {
           return true
       }
     })
-    getMultilineInputMock.mockImplementation(()=> [])
+    getMultilineInputMock.mockImplementation(() => [])
     await main.run()
     expect(runMock).toHaveReturned()
 
