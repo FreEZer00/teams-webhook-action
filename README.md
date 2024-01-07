@@ -74,7 +74,7 @@ jobs:
 
 | **Input**                 | **Required** | **Description**                                                                                                                                                                           |
 | ------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `webhook_url`             | **Required** | [Teams Webhook](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook) - url of the incoming webhook (should be store in secrets) |
+| `webhook_url`             | **Required** | [Teams Webhook](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook) - URL of the incoming webhook (should be store in secrets) |
 | `title`                   | Optional     | Custom title for the message card. Default `Workflow \"<workflow-name/>\" ran with result <result/>`                                                                                      |
 | `job`                     | Optional     | JSON formatted job `toJson(job)` (current job)                                                                                                                                            |
 | `needs`                   | Optional     | JSON formatted needs `toJson(needs)` (previous required jobs)                                                                                                                             |
