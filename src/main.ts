@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import {sendNotification} from './teamsclient/main'
+import { sendNotification } from './teamsclient/main'
 import {
   ActionInputs,
   AdditionalButton,
@@ -7,9 +7,9 @@ import {
   JobStatus,
   NeedsResult
 } from './types'
-import {parseJob, parseNeeds} from './service/input-parsing'
-import {buildConnectorMessage} from './service/webhook'
-import {context as github} from '@actions/github'
+import { parseJob, parseNeeds } from './service/input-parsing'
+import { buildConnectorMessage } from './service/webhook'
+import { context as github } from '@actions/github'
 
 function getGithubValues(): GithubValues {
   return {
@@ -22,7 +22,7 @@ function getGithubValues(): GithubValues {
   }
 }
 
-async function run(): Promise<void> {
+export async function run(): Promise<void> {
   try {
     const inputs = getInputs()
     const githubValues = getGithubValues()
@@ -58,8 +58,8 @@ const getInputs = (): ActionInputs => {
     )
   }
   const additionalButtons: AdditionalButton[] = additionalButtonUrl.map(
-    (url, index): AdditionalButton => {
-      return {displayName: additionalButtonTitle[index], url}
+    (url: string, index: number): AdditionalButton => {
+      return { displayName: additionalButtonTitle[index], url }
     }
   )
 
@@ -76,5 +76,3 @@ const getInputs = (): ActionInputs => {
     dryRun
   }
 }
-
-run()

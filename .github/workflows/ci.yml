@@ -1,0 +1,90 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test-typescript:
+    name: TypeScript Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        id: setup-node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install Dependencies
+        id: npm-ci
+        run: npm ci
+
+      - name: Check Format
+        id: npm-format-check
+        run: npm run format:check
+
+      - name: Lint
+        id: npm-lint
+        run: npm run lint
+
+      - name: Test
+        id: npm-ci-test
+        run: npm run ci-test
+  test-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          exit 0
+  test-action:
+    runs-on: ubuntu-latest
+    needs: [ test-job ]
+    if: ${{always()}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          webhook_url: ${{secrets.webhook}}
+          needs: ${{ toJson(needs) }}
+          job: ${{ toJson(job) }}
+          title: Custom title
+          additional_button_title: |-
+            Link to Google
+            TestButton
+          additional_button_url: |-
+            https://google.com
+            https://google.de
+          dry_run: true
+  test-action-without-facts:
+    runs-on: ubuntu-latest
+    needs: [ test-job ]
+    if: ${{always()}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          webhook_url: ${{secrets.webhook}}
+          needs: ${{ toJson(needs) }}
+          job: ${{ toJson(job) }}
+          hide_facts: true
+          dry_run: true
+  test-action-without-optionals:
+    runs-on: ubuntu-latest
+    if: ${{always()}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        with:
+          webhook_url: ${{secrets.webhook}}
+          dry_run: true

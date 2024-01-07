@@ -5,13 +5,16 @@
   "description": "Github action to use webhook of microsoft teams",
   "main": "lib/main.js",
   "scripts": {
-    "build": "tsc --newLine lf",
-    "format": "prettier --write **/*.ts",
-    "format-check": "prettier --check **/*.ts",
-    "lint": "eslint src/**/*.ts",
-    "package": "ncc build --source-map --license licenses.txt",
+    "bundle": "npm run format:write && npm run package",
+    "ci-test": "jest",
+    "coverage": "make-coverage-badge --output-path ./badges/coverage.svg",
+    "format:write": "prettier --write **/*.ts",
+    "format:check": "prettier --check **/*.ts",
+    "lint": "npx eslint . -c ./.github/linters/.eslintrc.yml",
+    "package": "ncc build src/index.ts --license licenses.txt",
+    "package:watch": "npm run package -- --watch",
     "test": "jest",
-    "all": "npm run build && npm run format && npm run lint && npm run package && npm test"
+    "all": "npm run format:write && npm run lint && npm run test && npm run coverage && npm run package"
   },
   "repository": {
     "type": "git",
@@ -25,6 +28,35 @@
   ],
   "author": "Freezer00",
   "license": "MIT",
+  "jest": {
+    "preset": "ts-jest",
+    "verbose": true,
+    "clearMocks": true,
+    "testEnvironment": "node",
+    "moduleFileExtensions": [
+      "js",
+      "ts"
+    ],
+    "testMatch": [
+      "**/*.test.ts"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/"
+    ],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "coverageReporters": [
+      "json-summary",
+      "text",
+      "lcov"
+    ],
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "./src/**"
+    ]
+  },
   "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
@@ -40,6 +72,7 @@
     "eslint-plugin-jest": "^27.6.1",
     "eslint-plugin-prettier": "^5.1.2",
     "jest": "^29.7.0",
+    "make-coverage-badge": "^1.2.0",
     "js-yaml": "^4.1.0",
     "prettier": "3.1.1",
     "ts-jest": "^29.1.1",
