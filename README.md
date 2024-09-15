@@ -7,7 +7,7 @@
   <a href="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/linter.yml"><img alt="typescript-action status" src="https://github.com/FreEZer00/teams-webhook-action/actions/workflows/linter.yml/badge.svg"></a>
 </p>
 
--------
+---
 
 <p align="center">
     <a href="#whats-included">What's included 🚀</a> &bull;
@@ -16,7 +16,7 @@
     <a href="#license">License 📓</a>
 </p>
 
--------
+---
 
 ## What's included
 
@@ -28,8 +28,9 @@
 
 This action sends a defined message card to an incoming teams webhook.
 
-Inspired by actions from [Skitionek](https://github.com/Skitionek/notify-microsoft-teams)
-and [homoluctus](https://github.com/lazy-actions/slatify).
+Inspired by actions from
+[Skitionek](https://github.com/Skitionek/notify-microsoft-teams) and
+[homoluctus](https://github.com/lazy-actions/slatify).
 
 ## Setup
 
@@ -49,7 +50,7 @@ jobs:
         exit 0
   build:
     name: Checkout and notify
-    needs: [ TestJob ]
+    needs: [TestJob]
     if: ${{always()}}
     runs-on: ubuntu-latest
     steps:

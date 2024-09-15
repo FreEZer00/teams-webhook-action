@@ -31,7 +31,7 @@ async function sendNotification(
       )
     }
   } catch (error: unknown) {
-    if(errorLog){
+    if (errorLog) {
       errorLog(
         `Error occurred when trying to post connector message: ${JSON.stringify(
           error
