@@ -14,7 +14,9 @@ async function sendNotification(
   log?: (logMessage: string) => void,
   errorLog?: (logMessage: string) => void
 ): Promise<void> {
-  !log || log(`Connector message ${JSON.stringify(message, null, 2)}`)
+  if (log) {
+    log(`Connector message ${JSON.stringify(message, null, 2)}`)
+  }
   if (dryrun) {
     return
   }
@@ -23,17 +25,19 @@ async function sendNotification(
   }
   try {
     const axiosResponse = await axios.post(webHookUrl, message)
-    !log ||
+    if (log) {
       log(
         `Posted connector message with response: HTTP ${axiosResponse.status}`
       )
+    }
   } catch (error: unknown) {
-    !errorLog ||
+    if(errorLog){
       errorLog(
         `Error occurred when trying to post connector message: ${JSON.stringify(
           error
         )}`
       )
+    }
     throw error
   }
 }
