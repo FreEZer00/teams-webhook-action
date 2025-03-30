@@ -7,14 +7,14 @@ import {
   OpenUriAction,
   PotentialAction,
   Section
-} from '../teamsclient/types'
+} from '../teamsclient/types.js'
 import {
   ActionInputs,
   GithubValues,
   JobStatus,
   NeedsResult,
   Status
-} from '../types'
+} from '../types.js'
 
 function determineColor(status: Status): string {
   if (status === 'failure') {
@@ -26,10 +26,10 @@ function determineColor(status: Status): string {
 }
 
 function getOverallStatus(inputs: ActionInputs): Status {
-  if (inputs.needs.some(need => need.failure) || inputs.job?.failure) {
+  if (inputs.needs.some((need) => need.failure) || inputs.job?.failure) {
     return 'failure'
   } else if (
-    inputs.needs.some(need => need.cancelled) ||
+    inputs.needs.some((need) => need.cancelled) ||
     inputs.job?.cancelled
   ) {
     return 'cancelled'
