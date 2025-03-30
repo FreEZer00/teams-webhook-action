@@ -1,7 +1,15 @@
-import { sendNotification } from '../src/teamsclient/main'
-import { defaultConnectorMessage } from '../src/teamsclient/types'
-import axios from 'axios'
-jest.mock('axios')
+import { defaultConnectorMessage } from '../src/teamsclient/types.js'
+import { jest } from '@jest/globals'
+
+import axios from '../__fixtures__/axios.js'
+
+jest.unstable_mockModule('axios', () => {
+  return {
+    default: axios
+  }
+})
+
+const { sendNotification } = await import('../src/teamsclient/main.js')
 
 describe('Tests for the teams client', () => {
   const message = {
@@ -10,26 +18,25 @@ describe('Tests for the teams client', () => {
     themeColor: 'color'
   }
 
-  const axiosPostMock = (axios.post = jest.fn())
-  axiosPostMock.mockReturnValueOnce({
-    status: 200,
-    data: null,
-    headers: {},
-    request: null,
-    config: {},
-    statusText: 'statusText'
-  })
   test('url not matching pattern', async function () {
     const url = 'not_a_url'
     await expect(
       sendNotification(url, message, false, console.log, console.error)
     ).rejects.toThrow('Webhook url not defined properly, not a URL')
-    expect(axiosPostMock).not.toHaveBeenCalled()
+    expect(axios.post).not.toHaveBeenCalled()
   })
   test('url matching pattern', async function () {
+    axios.post.mockResolvedValue({
+      status: 200,
+      data: null,
+      headers: {},
+      request: null,
+      config: {},
+      statusText: 'statusText'
+    })
     const url =
       'https://any.webhook.office.com/webhook/someid/1232153241312311/2313'
     await sendNotification(url, message, false, console.log, console.error)
-    expect(axiosPostMock).toHaveBeenCalled()
+    expect(axios.post).toHaveBeenCalled()
   })
 })

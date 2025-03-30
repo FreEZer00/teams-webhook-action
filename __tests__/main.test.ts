@@ -5,13 +5,24 @@
  * Specifically, the inputs listed in `action.yml` should be set as environment
  * variables following the pattern `INPUT_<INPUT_NAME>`.
  */
+import { jest } from '@jest/globals'
+import * as core from '../__fixtures__/core.js'
+import { buildConnectorMessage } from '../__fixtures__/webhook.js'
+import { sendNotification } from '../__fixtures__/teamsclient.js'
+import { parseJob, parseNeeds } from '../__fixtures__/input-parsing.js'
+import { ConnectorMessage } from '../src/teamsclient/types.js'
 
-import * as core from '@actions/core'
-import * as main from '../src/main'
-import * as webhook from '../src/service/webhook'
-import * as teamsclient from '../src/teamsclient/main'
-import * as parsing from '../src/service/input-parsing'
-import { ConnectorMessage } from '../src/teamsclient/types'
+jest.unstable_mockModule('@actions/core', () => core)
+jest.unstable_mockModule('../src/service/webhook.js', () => ({
+  buildConnectorMessage
+}))
+jest.unstable_mockModule('../src/service/input-parsing.js', () => ({
+  parseJob,
+  parseNeeds
+}))
+jest.unstable_mockModule('../src/teamsclient/main.js', () => ({
+  sendNotification
+}))
 
 const mockConnectorMessage: ConnectorMessage = {
   '@type': 'MessageCard',
@@ -28,48 +39,17 @@ const mockConnectorMessage: ConnectorMessage = {
   ],
   potentialAction: []
 }
+
 const mockWebhookUrl = 'mockurl'
-// Mock the action's main function
-const runMock = jest.spyOn(main, 'run')
-const webhookMock = jest
-  .spyOn(webhook, 'buildConnectorMessage')
-  .mockImplementation(() => mockConnectorMessage)
-const teamsclientMock = jest
-  .spyOn(teamsclient, 'sendNotification')
-  .mockImplementation()
-const parseJobMock = jest
-  .spyOn(parsing, 'parseJob')
-  .mockImplementation(() => undefined)
-const parseNeedsMock = jest
-  .spyOn(parsing, 'parseNeeds')
-  .mockImplementation(() => [])
 
-// Mock the GitHub Actions core library
-let infoMock: jest.SpyInstance
-let errorMock: jest.SpyInstance
-let getInputMock: jest.SpyInstance
-let getBooleanInputMock: jest.SpyInstance
-let getMultilineInputMock: jest.SpyInstance
-let setFailedMock: jest.SpyInstance
-
+const { run } = await import('../src/main.js')
 describe('action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-
-    infoMock = jest.spyOn(core, 'info').mockImplementation()
-    errorMock = jest.spyOn(core, 'error').mockImplementation()
-    getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
-    getBooleanInputMock = jest
-      .spyOn(core, 'getBooleanInput')
-      .mockImplementation()
-    getMultilineInputMock = jest
-      .spyOn(core, 'getMultilineInput')
-      .mockImplementation()
-    setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
   })
 
   it('calls send webhook', async () => {
-    getInputMock.mockImplementation((name: string): string => {
+    core.getInput.mockImplementation((name: string): string => {
       switch (name) {
         case 'webhook_url':
           return mockWebhookUrl
@@ -77,29 +57,24 @@ describe('action', () => {
           return ''
       }
     })
-    getBooleanInputMock.mockImplementation((name: string): boolean => {
-      switch (name) {
-        case 'dry_run':
-          return true
-        default:
-          return true
-      }
-    })
-    getMultilineInputMock.mockImplementation(() => [])
-    await main.run()
-    expect(runMock).toHaveReturned()
+    core.getBooleanInput.mockImplementation(() => true)
+    core.getMultilineInput.mockImplementation(() => [])
+    buildConnectorMessage.mockReturnValueOnce(mockConnectorMessage)
 
-    expect(parseJobMock).toHaveBeenCalled()
-    expect(parseNeedsMock).toHaveBeenCalled()
-    expect(webhookMock).toHaveBeenCalled()
-    expect(teamsclientMock).toHaveBeenCalledWith(
+    await run()
+
+    expect(parseJob).toHaveBeenCalled()
+    expect(parseNeeds).toHaveBeenCalled()
+    expect(buildConnectorMessage).toHaveBeenCalled()
+    expect(sendNotification).toHaveBeenCalledWith(
       mockWebhookUrl,
       mockConnectorMessage,
       true,
-      infoMock,
-      errorMock
+      core.info,
+      core.error
     )
-    expect(setFailedMock).not.toHaveBeenCalled()
+
+    expect(core.setFailed).not.toHaveBeenCalled()
   })
 
   // it('sets the time output', async () => {

@@ -1,4 +1,4 @@
-import { JobStatus, NeedsResult } from '../types'
+import { JobStatus, NeedsResult } from '../types.js'
 
 function parseNeeds(needs: string): NeedsResult[] {
   if (needs === '') {

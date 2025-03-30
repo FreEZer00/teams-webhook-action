@@ -1,14 +1,14 @@
 import * as core from '@actions/core'
-import { sendNotification } from './teamsclient/main'
+import { sendNotification } from './teamsclient/main.js'
 import {
   ActionInputs,
   AdditionalButton,
   GithubValues,
   JobStatus,
   NeedsResult
-} from './types'
-import { parseJob, parseNeeds } from './service/input-parsing'
-import { buildConnectorMessage } from './service/webhook'
+} from './types.js'
+import { parseJob, parseNeeds } from './service/input-parsing.js'
+import { buildConnectorMessage } from './service/webhook.js'
 import { context as github } from '@actions/github'
 
 function getGithubValues(): GithubValues {
