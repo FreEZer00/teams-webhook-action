@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Checkout
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
         id: setup-node
@@ -44,7 +44,7 @@ jobs:
   test-job:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: |
           exit 0
   test-action:
@@ -52,7 +52,7 @@ jobs:
     needs: [test-job]
     if: ${{always()}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
@@ -71,7 +71,7 @@ jobs:
     needs: [test-job]
     if: ${{always()}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{always()}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
