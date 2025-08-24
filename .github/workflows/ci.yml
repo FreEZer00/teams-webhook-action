@@ -18,6 +18,8 @@ jobs:
       - name: Checkout
         id: checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: 'false'
 
       - name: Setup Node.js
         id: setup-node
@@ -45,6 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: 'false'
       - run: |
           exit 0
   test-action:
@@ -53,6 +57,8 @@ jobs:
     if: ${{always()}}
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: 'false'
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
@@ -72,6 +78,8 @@ jobs:
     if: ${{always()}}
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: 'false'
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
@@ -84,6 +92,8 @@ jobs:
     if: ${{always()}}
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: 'false'
       - uses: ./
         with:
           webhook_url: ${{secrets.webhook}}
