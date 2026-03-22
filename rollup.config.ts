@@ -13,7 +13,12 @@ const config = {
     format: 'es',
     sourcemap: true
   },
-  plugins: [typescript(), nodeResolve(), commonjs(), json()]
+  plugins: [
+    typescript(),
+    nodeResolve({ preferBuiltins: true }),
+    json(),
+    commonjs()
+  ]
 }
 
 export default config
