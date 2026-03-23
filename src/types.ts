@@ -39,7 +39,7 @@ interface GithubValues {
 
 type Status = 'success' | 'skipped' | 'failure' | 'cancelled'
 
-export {
+export type {
   Status,
   JobStatus,
   ActionInputs,

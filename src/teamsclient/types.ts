@@ -111,7 +111,9 @@ export {
   defaultOpenUriAction,
   defaultAction,
   defaultActionCardAction,
-  defaultTarget,
+  defaultTarget
+}
+export type {
   Action,
   PotentialAction,
   OpenUriAction,

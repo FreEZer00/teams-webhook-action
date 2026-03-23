@@ -82,7 +82,7 @@ jobs:
 | `needs`                   | Optional     | JSON formatted needs `toJson(needs)` (previous required jobs)                                                                                                                             |
 | `additional_button_title` | Optional     | Multiline input for additional titles of potential actions on message card see [test.yml](.github/workflows/test.yml))                                                                    |
 | `additional_button_url`   | Optional     | Multiline input for additional links of potential actions on message card see [test.yml](.github/workflows/test.yml))                                                                     |
-| `hide_facts`              | Optional     | Keept the notification short and omit the facts (needs) in the message card (default `false`)                                                                                             |
+| `hide_facts`              | Optional     | Keep the notification short and omit the facts (needs) in the message card (default `false`)                                                                                              |
 | `dry_run`                 | Optional     | Skip the sending of the webhook to Teams (default `false`)                                                                                                                                |
 
 ## Sample
