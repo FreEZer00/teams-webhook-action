@@ -1,6 +1,6 @@
 {
   "name": "teams-webhook-action",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "private": true,
   "description": "Github action to use webhook of microsoft teams",
   "type": "module",
