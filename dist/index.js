@@ -9,7 +9,7 @@ import https from 'https';
 import 'net';
 import require$$1$1 from 'tls';
 import events$3, { EventEmitter } from 'events';
-import require$$5$4 from 'assert';
+import require$$5$5 from 'assert';
 import require$$1 from 'util';
 import require$$0$2 from 'node:assert';
 import require$$0$4 from 'node:net';
@@ -33,7 +33,7 @@ import require$$5$3 from 'string_decoder';
 import 'child_process';
 import 'timers';
 import stream, { Readable } from 'stream';
-import require$$0$7 from 'url';
+import require$$5$4 from 'url';
 import http2 from 'http2';
 import require$$1$7 from 'tty';
 import zlib from 'zlib';
@@ -41931,7 +41931,7 @@ function requireForm_data () {
 	var path$1 = path;
 	var http$1 = http;
 	var https$1 = https;
-	var parseUrl = require$$0$7.parse;
+	var parseUrl = require$$5$4.parse;
 	var fs = fs__default;
 	var Stream = stream.Stream;
 	var crypto$1 = crypto;
@@ -42715,8 +42715,8 @@ prototype.toString = function toString(encoder) {
 };
 
 /**
- * It replaces all instances of the characters `:`, `$`, `,`, `+`, `[`, and `]` with their
- * URI encoded counterparts
+ * It replaces URL-encoded forms of `:`, `$`, `,`, and spaces with
+ * their plain counterparts (`:`, `$`, `,`, `+`).
  *
  * @param {string} val The value to be encoded.
  *
@@ -42850,7 +42850,7 @@ var transitionalDefaults = {
   legacyInterceptorReqResOrdering: true,
 };
 
-var URLSearchParams$1 = require$$0$7.URLSearchParams;
+var URLSearchParams$1 = require$$5$4.URLSearchParams;
 
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
 
@@ -43287,7 +43287,9 @@ function normalizeValue(value) {
     return value;
   }
 
-  return utils$3.isArray(value) ? value.map(normalizeValue) : String(value);
+  return utils$3.isArray(value)
+    ? value.map(normalizeValue)
+    : String(value).replace(/[\r\n]+$/, '');
 }
 
 function parseTokens(str) {
@@ -43736,125 +43738,107 @@ function buildFullPath(baseURL, requestedURL, allowAbsoluteUrls) {
   return requestedURL;
 }
 
-var proxyFromEnv$1 = {};
+var DEFAULT_PORTS = {
+  ftp: 21,
+  gopher: 70,
+  http: 80,
+  https: 443,
+  ws: 80,
+  wss: 443,
+};
 
-var hasRequiredProxyFromEnv;
-
-function requireProxyFromEnv () {
-	if (hasRequiredProxyFromEnv) return proxyFromEnv$1;
-	hasRequiredProxyFromEnv = 1;
-
-	var parseUrl = require$$0$7.parse;
-
-	var DEFAULT_PORTS = {
-	  ftp: 21,
-	  gopher: 70,
-	  http: 80,
-	  https: 443,
-	  ws: 80,
-	  wss: 443,
-	};
-
-	var stringEndsWith = String.prototype.endsWith || function(s) {
-	  return s.length <= this.length &&
-	    this.indexOf(s, this.length - s.length) !== -1;
-	};
-
-	/**
-	 * @param {string|object} url - The URL, or the result from url.parse.
-	 * @return {string} The URL of the proxy that should handle the request to the
-	 *  given URL. If no proxy is set, this will be an empty string.
-	 */
-	function getProxyForUrl(url) {
-	  var parsedUrl = typeof url === 'string' ? parseUrl(url) : url || {};
-	  var proto = parsedUrl.protocol;
-	  var hostname = parsedUrl.host;
-	  var port = parsedUrl.port;
-	  if (typeof hostname !== 'string' || !hostname || typeof proto !== 'string') {
-	    return '';  // Don't proxy URLs without a valid scheme or host.
-	  }
-
-	  proto = proto.split(':', 1)[0];
-	  // Stripping ports in this way instead of using parsedUrl.hostname to make
-	  // sure that the brackets around IPv6 addresses are kept.
-	  hostname = hostname.replace(/:\d*$/, '');
-	  port = parseInt(port) || DEFAULT_PORTS[proto] || 0;
-	  if (!shouldProxy(hostname, port)) {
-	    return '';  // Don't proxy URLs that match NO_PROXY.
-	  }
-
-	  var proxy =
-	    getEnv('npm_config_' + proto + '_proxy') ||
-	    getEnv(proto + '_proxy') ||
-	    getEnv('npm_config_proxy') ||
-	    getEnv('all_proxy');
-	  if (proxy && proxy.indexOf('://') === -1) {
-	    // Missing scheme in proxy, default to the requested URL's scheme.
-	    proxy = proto + '://' + proxy;
-	  }
-	  return proxy;
-	}
-
-	/**
-	 * Determines whether a given URL should be proxied.
-	 *
-	 * @param {string} hostname - The host name of the URL.
-	 * @param {number} port - The effective port of the URL.
-	 * @returns {boolean} Whether the given URL should be proxied.
-	 * @private
-	 */
-	function shouldProxy(hostname, port) {
-	  var NO_PROXY =
-	    (getEnv('npm_config_no_proxy') || getEnv('no_proxy')).toLowerCase();
-	  if (!NO_PROXY) {
-	    return true;  // Always proxy if NO_PROXY is not set.
-	  }
-	  if (NO_PROXY === '*') {
-	    return false;  // Never proxy if wildcard is set.
-	  }
-
-	  return NO_PROXY.split(/[,\s]/).every(function(proxy) {
-	    if (!proxy) {
-	      return true;  // Skip zero-length hosts.
-	    }
-	    var parsedProxy = proxy.match(/^(.+):(\d+)$/);
-	    var parsedProxyHostname = parsedProxy ? parsedProxy[1] : proxy;
-	    var parsedProxyPort = parsedProxy ? parseInt(parsedProxy[2]) : 0;
-	    if (parsedProxyPort && parsedProxyPort !== port) {
-	      return true;  // Skip if ports don't match.
-	    }
-
-	    if (!/^[.*]/.test(parsedProxyHostname)) {
-	      // No wildcards, so stop proxying if there is an exact match.
-	      return hostname !== parsedProxyHostname;
-	    }
-
-	    if (parsedProxyHostname.charAt(0) === '*') {
-	      // Remove leading wildcard.
-	      parsedProxyHostname = parsedProxyHostname.slice(1);
-	    }
-	    // Stop proxying if the hostname ends with the no_proxy host.
-	    return !stringEndsWith.call(hostname, parsedProxyHostname);
-	  });
-	}
-
-	/**
-	 * Get the value for an environment variable.
-	 *
-	 * @param {string} key - The name of the environment variable.
-	 * @return {string} The value of the environment variable.
-	 * @private
-	 */
-	function getEnv(key) {
-	  return process.env[key.toLowerCase()] || process.env[key.toUpperCase()] || '';
-	}
-
-	proxyFromEnv$1.getProxyForUrl = getProxyForUrl;
-	return proxyFromEnv$1;
+function parseUrl$2(urlString) {
+  try {
+    return new URL(urlString);
+  } catch {
+    return null;
+  }
 }
 
-var proxyFromEnvExports = requireProxyFromEnv();
-var proxyFromEnv = /*@__PURE__*/getDefaultExportFromCjs(proxyFromEnvExports);
+/**
+ * @param {string|object|URL} url - The URL as a string or URL instance, or a
+ *   compatible object (such as the result from legacy url.parse).
+ * @return {string} The URL of the proxy that should handle the request to the
+ *  given URL. If no proxy is set, this will be an empty string.
+ */
+function getProxyForUrl(url) {
+  var parsedUrl = (typeof url === 'string' ? parseUrl$2(url) : url) || {};
+  var proto = parsedUrl.protocol;
+  var hostname = parsedUrl.host;
+  var port = parsedUrl.port;
+  if (typeof hostname !== 'string' || !hostname || typeof proto !== 'string') {
+    return '';  // Don't proxy URLs without a valid scheme or host.
+  }
+
+  proto = proto.split(':', 1)[0];
+  // Stripping ports in this way instead of using parsedUrl.hostname to make
+  // sure that the brackets around IPv6 addresses are kept.
+  hostname = hostname.replace(/:\d*$/, '');
+  port = parseInt(port) || DEFAULT_PORTS[proto] || 0;
+  if (!shouldProxy(hostname, port)) {
+    return '';  // Don't proxy URLs that match NO_PROXY.
+  }
+
+  var proxy = getEnv(proto + '_proxy') || getEnv('all_proxy');
+  if (proxy && proxy.indexOf('://') === -1) {
+    // Missing scheme in proxy, default to the requested URL's scheme.
+    proxy = proto + '://' + proxy;
+  }
+  return proxy;
+}
+
+/**
+ * Determines whether a given URL should be proxied.
+ *
+ * @param {string} hostname - The host name of the URL.
+ * @param {number} port - The effective port of the URL.
+ * @returns {boolean} Whether the given URL should be proxied.
+ * @private
+ */
+function shouldProxy(hostname, port) {
+  var NO_PROXY = getEnv('no_proxy').toLowerCase();
+  if (!NO_PROXY) {
+    return true;  // Always proxy if NO_PROXY is not set.
+  }
+  if (NO_PROXY === '*') {
+    return false;  // Never proxy if wildcard is set.
+  }
+
+  return NO_PROXY.split(/[,\s]/).every(function(proxy) {
+    if (!proxy) {
+      return true;  // Skip zero-length hosts.
+    }
+    var parsedProxy = proxy.match(/^(.+):(\d+)$/);
+    var parsedProxyHostname = parsedProxy ? parsedProxy[1] : proxy;
+    var parsedProxyPort = parsedProxy ? parseInt(parsedProxy[2]) : 0;
+    if (parsedProxyPort && parsedProxyPort !== port) {
+      return true;  // Skip if ports don't match.
+    }
+
+    if (!/^[.*]/.test(parsedProxyHostname)) {
+      // No wildcards, so stop proxying if there is an exact match.
+      return hostname !== parsedProxyHostname;
+    }
+
+    if (parsedProxyHostname.charAt(0) === '*') {
+      // Remove leading wildcard.
+      parsedProxyHostname = parsedProxyHostname.slice(1);
+    }
+    // Stop proxying if the hostname ends with the no_proxy host.
+    return !hostname.endsWith(parsedProxyHostname);
+  });
+}
+
+/**
+ * Get the value for an environment variable.
+ *
+ * @param {string} key - The name of the environment variable.
+ * @return {string} The value of the environment variable.
+ * @private
+ */
+function getEnv(key) {
+  return process.env[key.toLowerCase()] || process.env[key.toUpperCase()] || '';
+}
 
 var followRedirects$1 = {exports: {}};
 
@@ -45096,12 +45080,12 @@ var hasRequiredFollowRedirects;
 function requireFollowRedirects () {
 	if (hasRequiredFollowRedirects) return followRedirects$1.exports;
 	hasRequiredFollowRedirects = 1;
-	var url = require$$0$7;
+	var url = require$$5$4;
 	var URL = url.URL;
 	var http$1 = http;
 	var https$1 = https;
 	var Writable = stream.Writable;
-	var assert = require$$5$4;
+	var assert = require$$5$5;
 	var debug = requireDebug();
 
 	// Preventive platform detection
@@ -45788,7 +45772,7 @@ function requireFollowRedirects () {
 var followRedirectsExports = requireFollowRedirects();
 var followRedirects = /*@__PURE__*/getDefaultExportFromCjs(followRedirectsExports);
 
-const VERSION$9 = "1.13.6";
+const VERSION$9 = "1.14.0";
 
 function parseProtocol(url) {
   const match = /^([-+\w]{1,25})(:?\/\/|:)/.exec(url);
@@ -46452,6 +46436,9 @@ class Http2Sessions {
           } else {
             entries.splice(i, 1);
           }
+          if (!session.closed) {
+            session.close();
+          }
           return;
         }
       }
@@ -46531,7 +46518,7 @@ function dispatchBeforeRedirect(options, responseDetails) {
 function setProxy(options, configProxy, location) {
   let proxy = configProxy;
   if (!proxy && proxy !== false) {
-    const proxyUrl = proxyFromEnv.getProxyForUrl(location);
+    const proxyUrl = getProxyForUrl(location);
     if (proxyUrl) {
       proxy = new URL(proxyUrl);
     }
@@ -47921,14 +47908,18 @@ const factory = (env) => {
     test(() => {
       let duplexAccessed = false;
 
+      const body = new ReadableStream$1();
+
       const hasContentType = new Request(platform.origin, {
-        body: new ReadableStream$1(),
+        body,
         method: 'POST',
         get duplex() {
           duplexAccessed = true;
           return 'half';
         },
       }).headers.has('Content-Type');
+
+      body.cancel();
 
       return duplexAccessed && !hasContentType;
     });
@@ -48710,8 +48701,6 @@ utils$3.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoDa
 });
 
 utils$3.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
-  /*eslint func-names:0*/
-
   function generateHTTPMethod(isForm) {
     return function httpMethod(url, data, config) {
       return this.request(
