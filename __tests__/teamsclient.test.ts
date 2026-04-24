@@ -1,42 +1,44 @@
+import { jest, describe, test, expect, beforeEach } from '@jest/globals'
 import { defaultConnectorMessage } from '../src/teamsclient/types.js'
-import { jest } from '@jest/globals'
-
-import axios from '../__fixtures__/axios.js'
-
-jest.unstable_mockModule('axios', () => {
-  return {
-    default: axios
-  }
-})
 
 const { sendNotification } = await import('../src/teamsclient/main.js')
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe('Tests for the teams client', () => {
+  let fetchMock: jest.Mock
+
+  beforeEach(() => {
+    fetchMock = jest.fn()
+    global.fetch = fetchMock as unknown as typeof fetch
+  })
+
   const message = {
     ...defaultConnectorMessage,
     summary: 'summary',
     themeColor: 'color'
   }
 
-  test('url not matching pattern', async function () {
+  test('url not matching pattern', async () => {
     const url = 'not_a_url'
     await expect(
       sendNotification(url, message, false, console.log, console.error)
     ).rejects.toThrow('Webhook url not defined properly, not a URL')
-    expect(axios.post).not.toHaveBeenCalled()
+
+    expect(fetchMock).not.toHaveBeenCalled()
   })
-  test('url matching pattern', async function () {
-    axios.post.mockResolvedValue({
-      status: 200,
-      data: null,
-      headers: {},
-      request: null,
-      config: {},
-      statusText: 'statusText'
-    })
-    const url =
-      'https://any.webhook.office.com/webhook/someid/1232153241312311/2313'
+
+  test('url matching pattern', async () => {
+    ;(fetchMock as any).mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    )
+
+    const url = 'https://any.webhook.office.com/webhook/someid/123/456'
+
     await sendNotification(url, message, false, console.log, console.error)
-    expect(axios.post).toHaveBeenCalled()
+
+    expect(fetchMock).toHaveBeenCalled()
   })
 })

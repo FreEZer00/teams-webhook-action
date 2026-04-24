@@ -1,5 +1,4 @@
 import { ConnectorMessage } from './types.js'
-import axios from 'axios'
 
 function matchUrlPattern(url: string): boolean {
   const urlPattern =
@@ -23,22 +22,28 @@ async function sendNotification(
   if (!matchUrlPattern(webHookUrl)) {
     throw new Error('Webhook url not defined properly, not a URL')
   }
-  try {
-    const axiosResponse = await axios.post(webHookUrl, message)
+  const response = await fetch(webHookUrl, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(message)
+  })
+  if (response.ok) {
     if (log) {
-      log(
-        `Posted connector message with response: HTTP ${axiosResponse.status}`
-      )
+      log(`Posted connector message with response: HTTP ${response.status}`)
     }
-  } catch (error: unknown) {
+  } else {
     if (errorLog) {
       errorLog(
         `Error occurred when trying to post connector message: ${JSON.stringify(
-          error
+          response.body
         )}`
       )
     }
-    throw error
+    throw new Error(
+      `Connector message post failed with status ${response.status}`
+    )
   }
 }
 
