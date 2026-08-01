@@ -42,9 +42,10 @@ function createFacts(
   githubValues: GithubValues,
   job?: JobStatus
 ): Fact[] {
-  const facts: Fact[] = needs.map(
-    (n): Fact => ({ name: n.jobName, value: n.result })
-  )
+  const facts: Fact[] = needs.map((n): Fact => ({
+    name: n.jobName,
+    value: n.result
+  }))
   if (job) {
     facts.push({ name: `${githubValues.job}`, value: job.status })
   }

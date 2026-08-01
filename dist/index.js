@@ -28508,7 +28508,10 @@ function getOverallStatus(inputs) {
     return 'success';
 }
 function createFacts(needs, githubValues, job) {
-    const facts = needs.map((n) => ({ name: n.jobName, value: n.result }));
+    const facts = needs.map((n) => ({
+        name: n.jobName,
+        value: n.result
+    }));
     if (job) {
         facts.push({ name: `${githubValues.job}`, value: job.status });
     }
