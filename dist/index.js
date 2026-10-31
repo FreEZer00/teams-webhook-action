@@ -2172,11 +2172,11 @@ function requireDiagnostics () {
 	return diagnostics;
 }
 
-var request$3;
+var request$2;
 var hasRequiredRequest$1;
 
 function requireRequest$1 () {
-	if (hasRequiredRequest$1) return request$3;
+	if (hasRequiredRequest$1) return request$2;
 	hasRequiredRequest$1 = 1;
 
 	const {
@@ -2658,8 +2658,8 @@ function requireRequest$1 () {
 	  }
 	}
 
-	request$3 = Request;
-	return request$3;
+	request$2 = Request;
+	return request$2;
 }
 
 var dispatcher;
@@ -2742,6 +2742,7 @@ function requireDispatcherBase () {
 	if (hasRequiredDispatcherBase) return dispatcherBase;
 	hasRequiredDispatcherBase = 1;
 
+	const buffer = require$$0;
 	const Dispatcher = requireDispatcher();
 	const {
 	  ClientDestroyedError,
@@ -2754,6 +2755,7 @@ function requireDispatcherBase () {
 	const kOnClosed = Symbol('onClosed');
 	const kInterceptedDispatch = Symbol('Intercepted Dispatch');
 	const kWebSocketOptions = Symbol('webSocketOptions');
+	const kEventSourceOptions = Symbol('eventSourceOptions');
 
 	class DispatcherBase extends Dispatcher {
 	  constructor (opts) {
@@ -2764,12 +2766,19 @@ function requireDispatcherBase () {
 	    this[kClosed] = false;
 	    this[kOnClosed] = [];
 	    this[kWebSocketOptions] = opts?.webSocket ?? {};
+	    this[kEventSourceOptions] = opts?.eventSource ?? {};
 	  }
 
 	  get webSocketOptions () {
 	    return {
 	      maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
 	      maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
+	    }
+	  }
+
+	  get eventSourceOptions () {
+	    return {
+	      maxEventSize: this[kEventSourceOptions].maxEventSize ?? buffer.kStringMaxLength
 	    }
 	  }
 
@@ -9390,8 +9399,6 @@ function requireClientH1 () {
 	  socket[kParser] = new Parser(client, socket, llhttpInstance);
 
 	  addListener(socket, 'error', function (err) {
-	    assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	    const parser = this[kParser];
 
 	    // On Mac OS, we get an ECONNRESET even if there is a full body to be forwarded
@@ -10322,8 +10329,6 @@ function requireClientH2 () {
 	  socket[kHTTP2Session] = session;
 
 	  util.addListener(socket, 'error', function (err) {
-	    assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	    this[kError] = err;
 
 	    this[kClient][kOnError](err);
@@ -10397,8 +10402,6 @@ function requireClientH2 () {
 	}
 
 	function onHttp2SessionError (err) {
-	  assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	  this[kSocket][kError] = err;
 	  this[kClient][kOnError](err);
 	}
@@ -11346,9 +11349,10 @@ function requireClient () {
 	    // h2
 	    maxConcurrentStreams,
 	    allowH2,
-	    webSocket
+	    webSocket,
+	    eventSource
 	  } = {}) {
-	    super({ webSocket });
+	    super({ webSocket, eventSource });
 
 	    if (keepAlive !== undefined) {
 	      throw new InvalidArgumentError('unsupported keepAlive, use pipelining=0 instead')
@@ -12593,7 +12597,7 @@ function requireAgent () {
 	}
 
 	class Agent extends DispatcherBase {
-	  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
+	  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, tls, ...options } = {}) {
 	    if (typeof factory !== 'function') {
 	      throw new InvalidArgumentError('factory must be a function.')
 	    }
@@ -12612,11 +12616,15 @@ function requireAgent () {
 	      connect = { ...connect };
 	    }
 
+	    if (tls && typeof tls !== 'function') {
+	      tls = { ...tls };
+	    }
+
 	    this[kInterceptors] = options.interceptors?.Agent && Array.isArray(options.interceptors.Agent)
 	      ? options.interceptors.Agent
 	      : [createRedirectInterceptor({ maxRedirections })];
 
-	    this[kOptions] = { ...util.deepClone(options), connect };
+	    this[kOptions] = { ...util.deepClone(options), connect, tls };
 	    this[kOptions].interceptors = options.interceptors
 	      ? { ...options.interceptors }
 	      : undefined;
@@ -18235,11 +18243,11 @@ function requireDispatcherWeakref () {
 
 /* globals AbortController */
 
-var request$2;
+var request$1;
 var hasRequiredRequest;
 
 function requireRequest () {
-	if (hasRequiredRequest) return request$2;
+	if (hasRequiredRequest) return request$1;
 	hasRequiredRequest = 1;
 
 	const { extractBody, mixinBody, cloneBody, bodyUnusable } = requireBody();
@@ -19274,8 +19282,8 @@ function requireRequest () {
 	  }
 	]);
 
-	request$2 = { Request, makeRequest, fromInnerRequest, cloneRequest };
-	return request$2;
+	request$1 = { Request, makeRequest, fromInnerRequest, cloneRequest };
+	return request$1;
 }
 
 var fetch_1;
@@ -21159,8 +21167,10 @@ function requireFetch () {
 	  // 19. Run these steps in parallel:
 
 	  //    1. Run these steps, but abort when fetchParams is canceled:
-	  fetchParams.controller.onAborted = onAborted;
-	  fetchParams.controller.on('terminated', onAborted);
+	  if (!fetchParams.controller.resume) {
+	    fetchParams.controller.on('terminated', onAborted);
+	  }
+
 	  fetchParams.controller.resume = async () => {
 	    // 1. While true
 	    while (true) {
@@ -21329,8 +21339,6 @@ function requireFetch () {
 	          }
 	          location = headersList.get('location', true);
 
-	          this.body = new Readable({ read: resume });
-
 	          const decoders = [];
 
 	          const willFollow = location && request.redirect === 'follow' &&
@@ -21348,7 +21356,7 @@ function requireFetch () {
 	            // CVE fix similar to urllib3 (GHSA-gm62-xv2j-4w53) and curl (CVE-2022-32206).
 	            const maxContentEncodings = 5;
 	            if (codings.length > maxContentEncodings) {
-	              reject(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
+	              this.abort(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
 	              return true
 	            }
 
@@ -21380,6 +21388,8 @@ function requireFetch () {
 	              }
 	            }
 	          }
+
+	          this.body = new Readable({ read: resume });
 
 	          const onError = this.onError.bind(this);
 
@@ -21425,10 +21435,6 @@ function requireFetch () {
 	        onComplete () {
 	          if (this.abort) {
 	            fetchParams.controller.off('terminated', this.abort);
-	          }
-
-	          if (fetchParams.controller.onAborted) {
-	            fetchParams.controller.off('terminated', fetchParams.controller.onAborted);
 	          }
 
 	          fetchParams.controller.ended = true;
@@ -26228,6 +26234,20 @@ function requireReceiver () {
 	        if (isControlFrame(this.#info.opcode)) {
 	          this.#loop = this.parseControlFrame(body);
 	          this.#state = parserStates.INFO;
+
+	          // If the automatic PONG/CLOSE reply filled the socket's write buffer,
+	          // stop parsing and resume on drain so a PING flood cannot grow the
+	          // outbound queue without bound.
+	          const socket = this.ws[kResponse].socket;
+	          if (this.#loop && socket.writableNeedDrain) {
+	            this.#loop = false;
+	            socket.once('drain', () => {
+	              if (this.destroyed) return
+	              this.#loop = true;
+	              this.run(callback);
+	            });
+	            return
+	          }
 	        } else {
 	          if (!this.#info.compressed) {
 	            if (!this.writeFragments(body)) {
@@ -27259,6 +27279,7 @@ var hasRequiredEventsourceStream;
 function requireEventsourceStream () {
 	if (hasRequiredEventsourceStream) return eventsourceStream;
 	hasRequiredEventsourceStream = 1;
+	const buffer = require$$0;
 	const { Transform } = require$$0$2;
 	const { isASCIINumber, isValidLastEventId } = requireUtil();
 
@@ -27283,10 +27304,18 @@ function requireEventsourceStream () {
 	 */
 	const SPACE = 0x20;
 
+	const defaultMaxEventSize = buffer.kStringMaxLength;
+
 	const DATA = Buffer.from('data');
 	const EVENT = Buffer.from('event');
 	const ID = Buffer.from('id');
 	const RETRY = Buffer.from('retry');
+
+	// Each data field creates a string node, and each unconsumed input chunk keeps
+	// a Buffer wrapper. The absolute ceiling protects the large default byte limit.
+	const minParserItems = 1024;
+	const maxParserItems = 131072;
+	const bytesPerParserItem = 128;
 
 	function isASCIINumberBytes (buffer, start) {
 	  if (start >= buffer.length) {
@@ -27324,6 +27353,12 @@ function requireEventsourceStream () {
 	  }
 
 	  return true
+	}
+
+	function createMaxEventSizeExceededError () {
+	  const error = new Error('EventSource message size exceeded');
+	  error.aborted = false;
+	  return error
 	}
 
 	/**
@@ -27374,6 +27409,13 @@ function requireEventsourceStream () {
 	  pos = 0
 	  lineChunkIndex = 0
 	  linePos = 0
+	  lineLength = 0
+	  eventSize = 0
+	  eventFieldSizes = { data: 0, event: 0, id: 0, retry: 0 }
+	  dataLineCount = 0
+	  maxEventSize
+	  maxDataLines
+	  maxBufferedChunks
 
 	  event = {
 	    data: undefined,
@@ -27384,6 +27426,7 @@ function requireEventsourceStream () {
 
 	  /**
 	   * @param {object} options
+	   * @param {number} [options.maxEventSize]
 	   * @param {eventSourceSettings} options.eventSourceSettings
 	   * @param {Function} [options.push]
 	   */
@@ -27395,6 +27438,12 @@ function requireEventsourceStream () {
 	    super(options);
 
 	    this.state = options.eventSourceSettings || {};
+	    this.maxEventSize = options.maxEventSize ?? defaultMaxEventSize;
+	    const parserItemLimit = this.maxEventSize > 0
+	      ? Math.min(maxParserItems, Math.max(minParserItems, Math.floor(this.maxEventSize / bytesPerParserItem)))
+	      : 0;
+	    this.maxDataLines = parserItemLimit;
+	    this.maxBufferedChunks = parserItemLimit;
 	    if (options.push) {
 	      this.push = options.push;
 	    }
@@ -27412,6 +27461,14 @@ function requireEventsourceStream () {
 	      return
 	    }
 
+	    // A leading line ending can immediately release the currently buffered
+	    // line, even when it uses the final allowed chunk slot.
+	    if (this.maxEventSize > 0 &&
+	        this.chunks.length >= this.maxBufferedChunks &&
+	        chunk[0] !== LF && chunk[0] !== CR) {
+	      callback(createMaxEventSizeExceededError());
+	      return
+	    }
 	    this.chunks.push(chunk);
 
 	    // Strip leading byte-order-mark if we opened the stream and started
@@ -27490,7 +27547,12 @@ function requireEventsourceStream () {
 
 	        // In any case, we can process the line as we reached an
 	        // end-of-line character
-	        this.parseLine(this.readLine(), this.event);
+	        try {
+	          this.parseLine(this.readLine(), this.event);
+	        } catch (error) {
+	          callback(error);
+	          return
+	        }
 	        this.consumeCurrentByte();
 	        // A line was processed and this could be the end of the event. We need
 	        // to check if the next line is empty to determine if the event is
@@ -27499,15 +27561,28 @@ function requireEventsourceStream () {
 	        continue
 	      }
 
+	      // readLine() is only called after CR or LF. Reject an unfinished line
+	      // before it can retain an unbounded number of decoded chunks. The seven
+	      // extra bytes allow the longest field prefix ("event: " or "retry: ").
+	      if (this.maxEventSize > 0 && ++this.lineLength > this.maxEventSize + 7) {
+	        callback(createMaxEventSizeExceededError());
+	        return
+	      }
 	      this.advanceCursor();
 	    }
 
 	    callback();
 	  }
 
+	  _destroy (error, callback) {
+	    this.chunks.length = 0;
+	    this.clearEvent();
+	    super._destroy(error, callback);
+	  }
+
 	  /**
 	   * @param {Buffer} line
-	   * @param {EventStreamEvent} event
+	   * @param {EventSourceStreamEvent} event
 	   */
 	  parseLine (line, event) {
 	    // If the line is empty (a blank line)
@@ -27541,6 +27616,13 @@ function requireEventsourceStream () {
 	    }
 
 	    if (isFieldName(line, fieldLength, DATA)) {
+	      if (this.maxEventSize > 0 && this.dataLineCount >= this.maxDataLines) {
+	        throw createMaxEventSizeExceededError()
+	      }
+	      const valueBytes = line.length - valueStart;
+	      const dataSize = this.eventFieldSizes.data + (event.data === undefined ? 0 : 1) + valueBytes;
+	      this.setEventFieldSize('data', dataSize);
+
 	      const value = line.toString('utf8', valueStart);
 
 	      if (event.data === undefined) {
@@ -27548,11 +27630,13 @@ function requireEventsourceStream () {
 	      } else {
 	        event.data += `\n${value}`;
 	      }
+	      this.dataLineCount++;
 	      return
 	    }
 
 	    if (isFieldName(line, fieldLength, RETRY)) {
 	      if (isASCIINumberBytes(line, valueStart)) {
+	        this.setEventFieldSize('retry', line.length - valueStart);
 	        event.retry = line.toString('utf8', valueStart);
 	      }
 	      return
@@ -27560,18 +27644,27 @@ function requireEventsourceStream () {
 
 	    if (isFieldName(line, fieldLength, ID)) {
 	      if (isValidLastEventIdBytes(line, valueStart)) {
+	        this.setEventFieldSize('id', line.length - valueStart);
 	        event.id = line.toString('utf8', valueStart);
 	      }
 	      return
 	    }
 
 	    if (isFieldName(line, fieldLength, EVENT)) {
-	      const value = line.toString('utf8', valueStart);
-
-	      if (value.length > 0) {
-	        event.event = value;
+	      if (valueStart < line.length) {
+	        this.setEventFieldSize('event', line.length - valueStart);
+	        event.event = line.toString('utf8', valueStart);
 	      }
 	    }
+	  }
+
+	  setEventFieldSize (field, size) {
+	    const eventSize = this.eventSize - this.eventFieldSizes[field] + size;
+	    if (this.maxEventSize > 0 && eventSize > this.maxEventSize) {
+	      throw createMaxEventSizeExceededError()
+	    }
+	    this.eventSize = eventSize;
+	    this.eventFieldSizes[field] = size;
 	  }
 
 	  /**
@@ -27604,6 +27697,12 @@ function requireEventsourceStream () {
 	    this.event.event = undefined;
 	    this.event.id = undefined;
 	    this.event.retry = undefined;
+	    this.eventSize = 0;
+	    this.dataLineCount = 0;
+	    this.eventFieldSizes.data = 0;
+	    this.eventFieldSizes.event = 0;
+	    this.eventFieldSizes.id = 0;
+	    this.eventFieldSizes.retry = 0;
 	  }
 
 	  hasPendingEvent () {
@@ -27639,14 +27738,16 @@ function requireEventsourceStream () {
 	  syncLineStartToCursor () {
 	    this.lineChunkIndex = this.chunkIndex;
 	    this.linePos = this.pos;
+	    this.lineLength = 0;
 	    this.dropConsumedChunks();
 	  }
 
 	  dropConsumedChunks () {
-	    while (this.lineChunkIndex > 0) {
-	      this.chunks.shift();
-	      this.lineChunkIndex--;
-	      this.chunkIndex--;
+	    if (this.lineChunkIndex > 0) {
+	      const consumed = this.lineChunkIndex;
+	      this.chunks.splice(0, consumed);
+	      this.lineChunkIndex = 0;
+	      this.chunkIndex -= consumed;
 	    }
 
 	    if (this.chunkIndex === this.chunks.length) {
@@ -27772,6 +27873,7 @@ function requireEventsource () {
 	const { delay } = requireUtil();
 	const { kEnumerableProperty } = requireUtil$7();
 	const { environmentSettingsObject } = requireUtil$6();
+	const { getGlobalDispatcher } = requireGlobal();
 
 	let experimentalWarned = false;
 
@@ -28053,6 +28155,7 @@ function requireEventsource () {
 
 	      const eventSourceStream = new EventSourceStream({
 	        eventSourceSettings: this.#state,
+	        maxEventSize: this.#dispatcher.eventSourceOptions?.maxEventSize,
 	        push: (event) => {
 	          this.dispatchEvent(createFastMessageEvent(
 	            event.type,
@@ -28231,7 +28334,8 @@ function requireEventsource () {
 	  },
 	  {
 	    key: 'dispatcher', // undici only
-	    converter: webidl.converters.any
+	    converter: webidl.converters.any,
+	    defaultValue: () => getGlobalDispatcher()
 	  }
 	]);
 
@@ -29772,7 +29876,7 @@ function getApiBaseUrl() {
     return process.env['GITHUB_API_URL'] || 'https://api.github.com';
 }
 
-function getUserAgent$1() {
+function getUserAgent() {
   if (typeof navigator === "object" && "userAgent" in navigator) {
     return navigator.userAgent;
   }
@@ -29913,978 +30017,6 @@ function Collection() {
 }
 
 var Hook = { Collection };
-
-// pkg/dist-src/defaults.js
-
-// pkg/dist-src/version.js
-var VERSION$7 = "0.0.0-development";
-
-// pkg/dist-src/defaults.js
-var userAgent$1 = `octokit-endpoint.js/${VERSION$7} ${getUserAgent$1()}`;
-var DEFAULTS$1 = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent$1
-  },
-  mediaType: {
-    format: ""
-  }
-};
-
-// pkg/dist-src/util/lowercase-keys.js
-function lowercaseKeys$1(object) {
-  if (!object) {
-    return {};
-  }
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-// pkg/dist-src/util/is-plain-object.js
-function isPlainObject$3(value) {
-  if (typeof value !== "object" || value === null) return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]") return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null) return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-
-// pkg/dist-src/util/merge-deep.js
-function mergeDeep$1(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach((key) => {
-    if (isPlainObject$3(options[key])) {
-      if (!(key in defaults)) Object.assign(result, { [key]: options[key] });
-      else result[key] = mergeDeep$1(defaults[key], options[key]);
-    } else {
-      Object.assign(result, { [key]: options[key] });
-    }
-  });
-  return result;
-}
-
-// pkg/dist-src/util/remove-undefined-properties.js
-function removeUndefinedProperties$1(obj) {
-  for (const key in obj) {
-    if (obj[key] === void 0) {
-      delete obj[key];
-    }
-  }
-  return obj;
-}
-
-// pkg/dist-src/merge.js
-function merge$1(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? { method, url } : { url: method }, options);
-  } else {
-    options = Object.assign({}, route);
-  }
-  options.headers = lowercaseKeys$1(options.headers);
-  removeUndefinedProperties$1(options);
-  removeUndefinedProperties$1(options.headers);
-  const mergedOptions = mergeDeep$1(defaults || {}, options);
-  if (options.url === "/graphql") {
-    if (defaults && defaults.mediaType.previews?.length) {
-      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
-        (preview) => !mergedOptions.mediaType.previews.includes(preview)
-      ).concat(mergedOptions.mediaType.previews);
-    }
-    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
-  }
-  return mergedOptions;
-}
-
-// pkg/dist-src/util/add-query-parameters.js
-function addQueryParameters$1(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-  if (names.length === 0) {
-    return url;
-  }
-  return url + separator + names.map((name) => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-// pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex$1 = /\{[^{}}]+\}/g;
-function removeNonChars$1(variableName) {
-  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
-}
-function extractUrlVariableNames$1(url) {
-  const matches = url.match(urlVariableRegex$1);
-  if (!matches) {
-    return [];
-  }
-  return matches.map(removeNonChars$1).reduce((a, b) => a.concat(b), []);
-}
-
-// pkg/dist-src/util/omit.js
-function omit$1(object, keysToOmit) {
-  const result = { __proto__: null };
-  for (const key of Object.keys(object)) {
-    if (keysToOmit.indexOf(key) === -1) {
-      result[key] = object[key];
-    }
-  }
-  return result;
-}
-
-// pkg/dist-src/util/url-template.js
-function encodeReserved$1(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-    return part;
-  }).join("");
-}
-function encodeUnreserved$1(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-function encodeValue$1(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved$1(value) : encodeUnreserved$1(value);
-  if (key) {
-    return encodeUnreserved$1(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-function isDefined$1(value) {
-  return value !== void 0 && value !== null;
-}
-function isKeyOperator$1(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-function getValues$1(context, operator, key, modifier) {
-  var value = context[key], result = [];
-  if (isDefined$1(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
-      value = value.toString();
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-      result.push(
-        encodeValue$1(operator, value, isKeyOperator$1(operator) ? key : "")
-      );
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined$1).forEach(function(value2) {
-            result.push(
-              encodeValue$1(operator, value2, isKeyOperator$1(operator) ? key : "")
-            );
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$1(value[k])) {
-              result.push(encodeValue$1(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-        if (Array.isArray(value)) {
-          value.filter(isDefined$1).forEach(function(value2) {
-            tmp.push(encodeValue$1(operator, value2));
-          });
-        } else {
-          Object.keys(value).forEach(function(k) {
-            if (isDefined$1(value[k])) {
-              tmp.push(encodeUnreserved$1(k));
-              tmp.push(encodeValue$1(operator, value[k].toString()));
-            }
-          });
-        }
-        if (isKeyOperator$1(operator)) {
-          result.push(encodeUnreserved$1(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined$1(value)) {
-        result.push(encodeUnreserved$1(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved$1(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-  return result;
-}
-function parseUrl$1(template) {
-  return {
-    expand: expand$1.bind(null, template)
-  };
-}
-function expand$1(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  template = template.replace(
-    /\{([^\{\}]+)\}|([^\{\}]+)/g,
-    function(_, expression, literal) {
-      if (expression) {
-        let operator = "";
-        const values = [];
-        if (operators.indexOf(expression.charAt(0)) !== -1) {
-          operator = expression.charAt(0);
-          expression = expression.substr(1);
-        }
-        expression.split(/,/g).forEach(function(variable) {
-          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-          values.push(getValues$1(context, operator, tmp[1], tmp[2] || tmp[3]));
-        });
-        if (operator && operator !== "+") {
-          var separator = ",";
-          if (operator === "?") {
-            separator = "&";
-          } else if (operator !== "#") {
-            separator = operator;
-          }
-          return (values.length !== 0 ? operator : "") + values.join(separator);
-        } else {
-          return values.join(",");
-        }
-      } else {
-        return encodeReserved$1(literal);
-      }
-    }
-  );
-  if (template === "/") {
-    return template;
-  } else {
-    return template.replace(/\/$/, "");
-  }
-}
-
-// pkg/dist-src/parse.js
-function parse$1(options) {
-  let method = options.method.toUpperCase();
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit$1(options, [
-    "method",
-    "baseUrl",
-    "url",
-    "headers",
-    "request",
-    "mediaType"
-  ]);
-  const urlVariableNames = extractUrlVariableNames$1(url);
-  url = parseUrl$1(url).expand(parameters);
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit$1(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      headers.accept = headers.accept.split(/,/).map(
-        (format) => format.replace(
-          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
-          `application/vnd$1$2.${options.mediaType.format}`
-        )
-      ).join(",");
-    }
-    if (url.endsWith("/graphql")) {
-      if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
-        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
-          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-          return `application/vnd.github.${preview}-preview${format}`;
-        }).join(",");
-      }
-    }
-  }
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters$1(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      }
-    }
-  }
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  }
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  }
-  return Object.assign(
-    { method, url, headers },
-    typeof body !== "undefined" ? { body } : null,
-    options.request ? { request: options.request } : null
-  );
-}
-
-// pkg/dist-src/endpoint-with-defaults.js
-function endpointWithDefaults$1(defaults, route, options) {
-  return parse$1(merge$1(defaults, route, options));
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$4(oldDefaults, newDefaults) {
-  const DEFAULTS2 = merge$1(oldDefaults, newDefaults);
-  const endpoint2 = endpointWithDefaults$1.bind(null, DEFAULTS2);
-  return Object.assign(endpoint2, {
-    DEFAULTS: DEFAULTS2,
-    defaults: withDefaults$4.bind(null, DEFAULTS2),
-    merge: merge$1.bind(null, DEFAULTS2),
-    parse: parse$1
-  });
-}
-
-// pkg/dist-src/index.js
-var endpoint$1 = withDefaults$4(null, DEFAULTS$1);
-
-var fastContentTypeParse = {};
-
-var hasRequiredFastContentTypeParse;
-
-function requireFastContentTypeParse () {
-	if (hasRequiredFastContentTypeParse) return fastContentTypeParse;
-	hasRequiredFastContentTypeParse = 1;
-
-	const NullObject = function NullObject () { };
-	NullObject.prototype = Object.create(null);
-
-	/**
-	 * RegExp to match *( ";" parameter ) in RFC 7231 sec 3.1.1.1
-	 *
-	 * parameter     = token "=" ( token / quoted-string )
-	 * token         = 1*tchar
-	 * tchar         = "!" / "#" / "$" / "%" / "&" / "'" / "*"
-	 *               / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
-	 *               / DIGIT / ALPHA
-	 *               ; any VCHAR, except delimiters
-	 * quoted-string = DQUOTE *( qdtext / quoted-pair ) DQUOTE
-	 * qdtext        = HTAB / SP / %x21 / %x23-5B / %x5D-7E / obs-text
-	 * obs-text      = %x80-FF
-	 * quoted-pair   = "\" ( HTAB / SP / VCHAR / obs-text )
-	 */
-	const paramRE = /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\v\u0020-\u00ff])*"|[!#$%&'*+.^\w`|~-]+) */gu;
-
-	/**
-	 * RegExp to match quoted-pair in RFC 7230 sec 3.2.6
-	 *
-	 * quoted-pair = "\" ( HTAB / SP / VCHAR / obs-text )
-	 * obs-text    = %x80-FF
-	 */
-	const quotedPairRE = /\\([\v\u0020-\u00ff])/gu;
-
-	/**
-	 * RegExp to match type in RFC 7231 sec 3.1.1.1
-	 *
-	 * media-type = type "/" subtype
-	 * type       = token
-	 * subtype    = token
-	 */
-	const mediaTypeRE = /^[!#$%&'*+.^\w|~-]+\/[!#$%&'*+.^\w|~-]+$/u;
-
-	// default ContentType to prevent repeated object creation
-	const defaultContentType = { type: '', parameters: new NullObject() };
-	Object.freeze(defaultContentType.parameters);
-	Object.freeze(defaultContentType);
-
-	/**
-	 * Parse media type to object.
-	 *
-	 * @param {string|object} header
-	 * @return {Object}
-	 * @public
-	 */
-
-	function parse (header) {
-	  if (typeof header !== 'string') {
-	    throw new TypeError('argument header is required and must be a string')
-	  }
-
-	  let index = header.indexOf(';');
-	  const type = index !== -1
-	    ? header.slice(0, index).trim()
-	    : header.trim();
-
-	  if (mediaTypeRE.test(type) === false) {
-	    throw new TypeError('invalid media type')
-	  }
-
-	  const result = {
-	    type: type.toLowerCase(),
-	    parameters: new NullObject()
-	  };
-
-	  // parse parameters
-	  if (index === -1) {
-	    return result
-	  }
-
-	  let key;
-	  let match;
-	  let value;
-
-	  paramRE.lastIndex = index;
-
-	  while ((match = paramRE.exec(header))) {
-	    if (match.index !== index) {
-	      throw new TypeError('invalid parameter format')
-	    }
-
-	    index += match[0].length;
-	    key = match[1].toLowerCase();
-	    value = match[2];
-
-	    if (value[0] === '"') {
-	      // remove quotes and escapes
-	      value = value
-	        .slice(1, value.length - 1);
-
-	      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, '$1'));
-	    }
-
-	    result.parameters[key] = value;
-	  }
-
-	  if (index !== header.length) {
-	    throw new TypeError('invalid parameter format')
-	  }
-
-	  return result
-	}
-
-	function safeParse (header) {
-	  if (typeof header !== 'string') {
-	    return defaultContentType
-	  }
-
-	  let index = header.indexOf(';');
-	  const type = index !== -1
-	    ? header.slice(0, index).trim()
-	    : header.trim();
-
-	  if (mediaTypeRE.test(type) === false) {
-	    return defaultContentType
-	  }
-
-	  const result = {
-	    type: type.toLowerCase(),
-	    parameters: new NullObject()
-	  };
-
-	  // parse parameters
-	  if (index === -1) {
-	    return result
-	  }
-
-	  let key;
-	  let match;
-	  let value;
-
-	  paramRE.lastIndex = index;
-
-	  while ((match = paramRE.exec(header))) {
-	    if (match.index !== index) {
-	      return defaultContentType
-	    }
-
-	    index += match[0].length;
-	    key = match[1].toLowerCase();
-	    value = match[2];
-
-	    if (value[0] === '"') {
-	      // remove quotes and escapes
-	      value = value
-	        .slice(1, value.length - 1);
-
-	      quotedPairRE.test(value) && (value = value.replace(quotedPairRE, '$1'));
-	    }
-
-	    result.parameters[key] = value;
-	  }
-
-	  if (index !== header.length) {
-	    return defaultContentType
-	  }
-
-	  return result
-	}
-
-	fastContentTypeParse.default = { parse, safeParse };
-	fastContentTypeParse.parse = parse;
-	fastContentTypeParse.safeParse = safeParse;
-	fastContentTypeParse.defaultContentType = defaultContentType;
-	return fastContentTypeParse;
-}
-
-var fastContentTypeParseExports = requireFastContentTypeParse();
-
-const intRegex = /^-?\d+$/;
-const noiseValue = /^-?\d+n+$/; // Noise - strings that match the custom format before being converted to it
-const originalStringify = JSON.stringify;
-const originalParse = JSON.parse;
-const customFormat = /^-?\d+n$/;
-
-const bigIntsStringify = /([\[:])?"(-?\d+)n"($|([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
-const noiseStringify =
-  /([\[:])?("-?\d+n+)n("$|"([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
-
-/**
- * @typedef {(this: any, key: string | number | undefined, value: any) => any} Replacer
- * @typedef {(key: string | number | undefined, value: any, context?: { source: string }) => any} Reviver
- */
-
-/**
- * Converts a JavaScript value to a JSON string.
- *
- * Supports serialization of BigInt values using two strategies:
- * 1. Custom format "123n" → "123" (universal fallback)
- * 2. Native JSON.rawJSON() (Node.js 22+, fastest) when available
- *
- * All other values are serialized exactly like native JSON.stringify().
- *
- * @param {*} value The value to convert to a JSON string.
- * @param {Replacer | Array<string | number> | null} [replacer]
- *   A function that alters the behavior of the stringification process,
- *   or an array of strings/numbers to indicate properties to exclude.
- * @param {string | number} [space]
- *   A string or number to specify indentation or pretty-printing.
- * @returns {string} The JSON string representation.
- */
-const JSONStringify = (value, replacer, space) => {
-  if ("rawJSON" in JSON) {
-    return originalStringify(
-      value,
-      (key, value) => {
-        if (typeof value === "bigint") return JSON.rawJSON(value.toString());
-
-        if (Array.isArray(replacer) && replacer.includes(key)) return value;
-
-        return value;
-      },
-      space,
-    );
-  }
-
-  if (!value) return originalStringify(value, replacer, space);
-
-  const convertedToCustomJSON = originalStringify(
-    value,
-    (key, value) => {
-      const isNoise = typeof value === "string" && noiseValue.test(value);
-
-      if (isNoise) return value.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
-
-      if (typeof value === "bigint") return value.toString() + "n";
-
-      if (Array.isArray(replacer) && replacer.includes(key)) return value;
-
-      return value;
-    },
-    space,
-  );
-  const processedJSON = convertedToCustomJSON.replace(
-    bigIntsStringify,
-    "$1$2$3",
-  ); // Delete one "n" off the end of every BigInt value
-  const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
-
-  return denoisedJSON;
-};
-
-const featureCache = new Map();
-
-/**
- * Detects if the current JSON.parse implementation supports the context.source feature.
- *
- * Uses toString() fingerprinting to cache results and automatically detect runtime
- * replacements of JSON.parse (polyfills, mocks, etc.).
- *
- * @returns {boolean} true if context.source is supported, false otherwise.
- */
-const isContextSourceSupported = () => {
-  const parseFingerprint = JSON.parse.toString();
-
-  if (featureCache.has(parseFingerprint)) {
-    return featureCache.get(parseFingerprint);
-  }
-
-  try {
-    const result = JSON.parse(
-      "1",
-      (_, __, context) => !!context?.source && context.source === "1",
-    );
-    featureCache.set(parseFingerprint, result);
-
-    return result;
-  } catch {
-    featureCache.set(parseFingerprint, false);
-
-    return false;
-  }
-};
-
-/**
- * Reviver function that converts custom-format BigInt strings back to BigInt values.
- * Also handles "noise" strings that accidentally match the BigInt format.
- *
- * @param {string | number | undefined} key The object key.
- * @param {*} value The value being parsed.
- * @param {object} [context] Parse context (if supported by JSON.parse).
- * @param {Reviver} [userReviver] User's custom reviver function.
- * @returns {any} The transformed value.
- */
-const convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
-  const isCustomFormatBigInt =
-    typeof value === "string" && customFormat.test(value);
-  if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
-
-  const isNoiseValue = typeof value === "string" && noiseValue.test(value);
-  if (isNoiseValue) return value.slice(0, -1);
-
-  return value;
-};
-
-/**
- * Fast JSON.parse implementation (~2x faster than classic fallback).
- * Uses JSON.parse's context.source feature to detect integers and convert
- * large numbers directly to BigInt without string manipulation.
- *
- * Does not support legacy custom format from v1 of this library.
- *
- * @param {string} text JSON string to parse.
- * @param {Reviver} [reviver] Transform function to apply to each value.
- * @returns {any} Parsed JavaScript value.
- */
-const JSONParseV2 = (text, reviver) => {
-  return JSON.parse(text, (key, value, context) => {
-    const isBigNumber =
-      typeof value === "number" &&
-      (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER);
-    const isInt = context && intRegex.test(context.source);
-    const isBigInt = isBigNumber && isInt;
-
-    if (isBigInt) return BigInt(context.source);
-
-    return value;
-  });
-};
-
-const MAX_INT = Number.MAX_SAFE_INTEGER.toString();
-const MAX_DIGITS = MAX_INT.length;
-const stringsOrLargeNumbers =
-  /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
-const noiseValueWithQuotes = /^"-?\d+n+"$/; // Noise - strings that match the custom format before being converted to it
-
-/**
- * Converts a JSON string into a JavaScript value.
- *
- * Supports parsing of large integers using two strategies:
- * 1. Classic fallback: Marks large numbers with "123n" format, then converts to BigInt
- * 2. Fast path (JSONParseV2): Uses context.source feature (~2x faster) when available
- *
- * All other JSON values are parsed exactly like native JSON.parse().
- *
- * @param {string} text A valid JSON string.
- * @param {Reviver} [reviver]
- *   A function that transforms the results. This function is called for each member
- *   of the object. If a member contains nested objects, the nested objects are
- *   transformed before the parent object is.
- * @returns {any} The parsed JavaScript value.
- * @throws {SyntaxError} If text is not valid JSON.
- */
-const JSONParse = (text, reviver) => {
-  if (!text) return originalParse(text, reviver);
-
-  if (isContextSourceSupported()) return JSONParseV2(text); // Shortcut to a faster (2x) and simpler version
-
-  // Find and mark big numbers with "n"
-  const serializedData = text.replace(
-    stringsOrLargeNumbers,
-    (text, digits, fractional, exponential) => {
-      const isString = text[0] === '"';
-      const isNoise = isString && noiseValueWithQuotes.test(text);
-
-      if (isNoise) return text.substring(0, text.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
-
-      const isFractionalOrExponential = fractional || exponential;
-      const isLessThanMaxSafeInt =
-        digits &&
-        (digits.length < MAX_DIGITS ||
-          (digits.length === MAX_DIGITS && digits <= MAX_INT)); // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
-
-      if (isString || isFractionalOrExponential || isLessThanMaxSafeInt)
-        return text;
-
-      return '"' + text + 'n"';
-    },
-  );
-
-  return originalParse(serializedData, (key, value, context) =>
-    convertMarkedBigIntsReviver(key, value),
-  );
-};
-
-let RequestError$1 = class RequestError extends Error {
-  name;
-  /**
-   * http status code
-   */
-  status;
-  /**
-   * Request options that lead to the error.
-   */
-  request;
-  /**
-   * Response object if a response was received
-   */
-  response;
-  constructor(message, statusCode, options) {
-    super(message, { cause: options.cause });
-    this.name = "HttpError";
-    this.status = Number.parseInt(statusCode);
-    if (Number.isNaN(this.status)) {
-      this.status = 0;
-    }
-    /* v8 ignore else -- @preserve -- Bug with vitest coverage where it sees an else branch that doesn't exist */
-    if ("response" in options) {
-      this.response = options.response;
-    }
-    const requestCopy = Object.assign({}, options.request);
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(
-          /(?<! ) .*$/,
-          " [REDACTED]"
-        )
-      });
-    }
-    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-};
-
-// pkg/dist-src/index.js
-
-// pkg/dist-src/version.js
-var VERSION$6 = "10.0.8";
-
-// pkg/dist-src/defaults.js
-var defaults_default$1 = {
-  headers: {
-    "user-agent": `octokit-request.js/${VERSION$6} ${getUserAgent$1()}`
-  }
-};
-
-// pkg/dist-src/is-plain-object.js
-function isPlainObject$2(value) {
-  if (typeof value !== "object" || value === null) return false;
-  if (Object.prototype.toString.call(value) !== "[object Object]") return false;
-  const proto = Object.getPrototypeOf(value);
-  if (proto === null) return true;
-  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
-  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
-}
-var noop$2 = () => "";
-async function fetchWrapper$1(requestOptions) {
-  const fetch = requestOptions.request?.fetch || globalThis.fetch;
-  if (!fetch) {
-    throw new Error(
-      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
-    );
-  }
-  const log = requestOptions.request?.log || console;
-  const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  const body = isPlainObject$2(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
-  const requestHeaders = Object.fromEntries(
-    Object.entries(requestOptions.headers).map(([name, value]) => [
-      name,
-      String(value)
-    ])
-  );
-  let fetchResponse;
-  try {
-    fetchResponse = await fetch(requestOptions.url, {
-      method: requestOptions.method,
-      body,
-      redirect: requestOptions.request?.redirect,
-      headers: requestHeaders,
-      signal: requestOptions.request?.signal,
-      // duplex must be set if request.body is ReadableStream or Async Iterables.
-      // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
-      ...requestOptions.body && { duplex: "half" }
-    });
-  } catch (error) {
-    let message = "Unknown Error";
-    if (error instanceof Error) {
-      if (error.name === "AbortError") {
-        error.status = 500;
-        throw error;
-      }
-      message = error.message;
-      if (error.name === "TypeError" && "cause" in error) {
-        if (error.cause instanceof Error) {
-          message = error.cause.message;
-        } else if (typeof error.cause === "string") {
-          message = error.cause;
-        }
-      }
-    }
-    const requestError = new RequestError$1(message, 500, {
-      request: requestOptions
-    });
-    requestError.cause = error;
-    throw requestError;
-  }
-  const status = fetchResponse.status;
-  const url = fetchResponse.url;
-  const responseHeaders = {};
-  for (const [key, value] of fetchResponse.headers) {
-    responseHeaders[key] = value;
-  }
-  const octokitResponse = {
-    url,
-    status,
-    headers: responseHeaders,
-    data: ""
-  };
-  if ("deprecation" in responseHeaders) {
-    const matches = responseHeaders.link && responseHeaders.link.match(/<([^<>]+)>; rel="deprecation"/);
-    const deprecationLink = matches && matches.pop();
-    log.warn(
-      `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${responseHeaders.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
-    );
-  }
-  if (status === 204 || status === 205) {
-    return octokitResponse;
-  }
-  if (requestOptions.method === "HEAD") {
-    if (status < 400) {
-      return octokitResponse;
-    }
-    throw new RequestError$1(fetchResponse.statusText, status, {
-      response: octokitResponse,
-      request: requestOptions
-    });
-  }
-  if (status === 304) {
-    octokitResponse.data = await getResponseData$1(fetchResponse);
-    throw new RequestError$1("Not modified", status, {
-      response: octokitResponse,
-      request: requestOptions
-    });
-  }
-  if (status >= 400) {
-    octokitResponse.data = await getResponseData$1(fetchResponse);
-    throw new RequestError$1(toErrorMessage$1(octokitResponse.data), status, {
-      response: octokitResponse,
-      request: requestOptions
-    });
-  }
-  octokitResponse.data = parseSuccessResponseBody ? await getResponseData$1(fetchResponse) : fetchResponse.body;
-  return octokitResponse;
-}
-async function getResponseData$1(response) {
-  const contentType = response.headers.get("content-type");
-  if (!contentType) {
-    return response.text().catch(noop$2);
-  }
-  const mimetype = fastContentTypeParseExports.safeParse(contentType);
-  if (isJSONResponse$1(mimetype)) {
-    let text = "";
-    try {
-      text = await response.text();
-      return JSONParse(text);
-    } catch (err) {
-      return text;
-    }
-  } else if (mimetype.type.startsWith("text/") || mimetype.parameters.charset?.toLowerCase() === "utf-8") {
-    return response.text().catch(noop$2);
-  } else {
-    return response.arrayBuffer().catch(
-      /* v8 ignore next -- @preserve */
-      () => new ArrayBuffer(0)
-    );
-  }
-}
-function isJSONResponse$1(mimetype) {
-  return mimetype.type === "application/json" || mimetype.type === "application/scim+json";
-}
-function toErrorMessage$1(data) {
-  if (typeof data === "string") {
-    return data;
-  }
-  if (data instanceof ArrayBuffer) {
-    return "Unknown error";
-  }
-  if ("message" in data) {
-    const suffix = "documentation_url" in data ? ` - ${data.documentation_url}` : "";
-    return Array.isArray(data.errors) ? `${data.message}: ${data.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${data.message}${suffix}`;
-  }
-  return `Unknown error: ${JSON.stringify(data)}`;
-}
-
-// pkg/dist-src/with-defaults.js
-function withDefaults$3(oldEndpoint, newDefaults) {
-  const endpoint2 = oldEndpoint.defaults(newDefaults);
-  const newApi = function(route, parameters) {
-    const endpointOptions = endpoint2.merge(route, parameters);
-    if (!endpointOptions.request || !endpointOptions.request.hook) {
-      return fetchWrapper$1(endpoint2.parse(endpointOptions));
-    }
-    const request2 = (route2, parameters2) => {
-      return fetchWrapper$1(
-        endpoint2.parse(endpoint2.merge(route2, parameters2))
-      );
-    };
-    Object.assign(request2, {
-      endpoint: endpoint2,
-      defaults: withDefaults$3.bind(null, endpoint2)
-    });
-    return endpointOptions.request.hook(request2, endpointOptions);
-  };
-  return Object.assign(newApi, {
-    endpoint: endpoint2,
-    defaults: withDefaults$3.bind(null, endpoint2)
-  });
-}
-
-// pkg/dist-src/index.js
-var request$1 = withDefaults$3(endpoint$1, defaults_default$1);
-/* v8 ignore next -- @preserve */
-/* v8 ignore else -- @preserve */
-
-function getUserAgent() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && process.version !== undefined) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${
-      process.arch
-    })`;
-  }
-
-  return "<environment undetectable>";
-}
 
 // pkg/dist-src/defaults.js
 
@@ -31145,7 +30277,7 @@ function expand(template, context) {
 }
 
 // pkg/dist-src/parse.js
-function parse(options) {
+function parse$1(options) {
   let method = options.method.toUpperCase();
   let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
   let headers = Object.assign({}, options.headers);
@@ -31211,7 +30343,7 @@ function parse(options) {
 
 // pkg/dist-src/endpoint-with-defaults.js
 function endpointWithDefaults(defaults, route, options) {
-  return parse(merge(defaults, route, options));
+  return parse$1(merge(defaults, route, options));
 }
 
 // pkg/dist-src/with-defaults.js
@@ -31222,12 +30354,786 @@ function withDefaults$2(oldDefaults, newDefaults) {
     DEFAULTS: DEFAULTS2,
     defaults: withDefaults$2.bind(null, DEFAULTS2),
     merge: merge.bind(null, DEFAULTS2),
-    parse
+    parse: parse$1
   });
 }
 
 // pkg/dist-src/index.js
 var endpoint = withDefaults$2(null, DEFAULTS);
+
+/*!
+ * content-type
+ * Copyright(c) 2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+const SP = 32; // " "
+const HTAB = 9; // "\t"
+const SEMI = 59; // ";"
+const EQ = 61; // "="
+const DQUOTE = 34; // '"'
+const BSLASH = 92; // "\\"
+const COMMA = 44; // ","
+const LOWER_CASE = 1;
+const OWS = 2;
+const SEMI_FLAG = 4;
+const COMMA_FLAG = 8;
+const TOKEN_FLAG = 16;
+const NON_ASCII = 0xff00;
+const CASE_FLAGS = LOWER_CASE | NON_ASCII;
+/**
+ * Character flags used to normalize HTTP field values while scanning.
+ * Out-of-range reads intentionally coerce to zero in bitwise expressions.
+ */
+const CHAR_MAP = new Uint8Array(0x100);
+CHAR_MAP[HTAB] |= OWS;
+CHAR_MAP[SP] |= OWS;
+CHAR_MAP[SEMI] |= SEMI_FLAG;
+CHAR_MAP[COMMA] |= COMMA_FLAG;
+for (let code = 0x80 /* non-ASCII */; code <= 0xff; code++) {
+    CHAR_MAP[code] |= LOWER_CASE;
+}
+for (const char of "!#$%&'*+-.^_`|~") {
+    CHAR_MAP[char.charCodeAt(0)] |= TOKEN_FLAG;
+}
+for (let code = 0x30 /* 0 */; code <= 0x39 /* 9 */; code++) {
+    CHAR_MAP[code] |= TOKEN_FLAG;
+}
+for (let code = 0x41 /* A */; code <= 0x5a /* Z */; code++) {
+    CHAR_MAP[code] |= LOWER_CASE | TOKEN_FLAG;
+}
+for (let code = 0x61 /* a */; code <= 0x7a /* z */; code++) {
+    CHAR_MAP[code] |= TOKEN_FLAG;
+}
+/**
+ * Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
+ */
+const NullObject = /* @__PURE__ */ (() => {
+    const C = function () { };
+    C.prototype = Object.create(null);
+    return C;
+})();
+/**
+ * Parse a `Content-Type` header.
+ */
+function parse(header, options) {
+    const stopFlags = SEMI_FLAG | (0);
+    const len = header.length;
+    let valueStart = 0;
+    while ((CHAR_MAP[header.charCodeAt(valueStart)] & OWS) !== 0) {
+        valueStart++;
+    }
+    let index = valueStart;
+    let typeFlags = 0;
+    let whitespace = -1;
+    let stop = 0;
+    while (index < len) {
+        const code = header.charCodeAt(index);
+        const flags = CHAR_MAP[code];
+        if ((flags & stopFlags) !== 0) {
+            stop |= flags & COMMA_FLAG;
+            break;
+        }
+        if ((flags & OWS) !== 0) {
+            if (whitespace === -1)
+                whitespace = index;
+        }
+        else {
+            whitespace = -1;
+        }
+        typeFlags |= (code & NON_ASCII) | flags;
+        index++;
+    }
+    const valueEnd = whitespace === -1 ? index : whitespace;
+    const value = header.slice(valueStart, valueEnd);
+    const type = (typeFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
+    if (index === len || stop !== 0) {
+        return { type, index, parameters: new NullObject() };
+    }
+    return parseParameters(header, type, index, len, stopFlags);
+}
+/**
+ * Parses the parameters of a `Content-Type` header starting at the given index.
+ */
+function parseParameters(header, type, index, len, stopFlags) {
+    const parameters = new NullObject();
+    parameter: while (index < len) {
+        index++; // Skip over ;
+        while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) {
+            index++;
+        }
+        const keyStart = index;
+        let keyFlags = 0;
+        let keyWhitespace = -1;
+        while (index < len) {
+            const code = header.charCodeAt(index);
+            const flags = CHAR_MAP[code];
+            if ((flags & stopFlags) !== 0) {
+                if ((flags & COMMA_FLAG) !== 0)
+                    break parameter;
+                continue parameter;
+            }
+            if (code === EQ) {
+                const keyEnd = keyWhitespace === -1 ? index : keyWhitespace;
+                const value = header.slice(keyStart, keyEnd);
+                const key = (keyFlags & CASE_FLAGS) === 0 ? value : value.toLowerCase();
+                index++;
+                while ((CHAR_MAP[header.charCodeAt(index)] & OWS) !== 0) {
+                    index++;
+                }
+                if (index < len && header.charCodeAt(index) === DQUOTE) {
+                    const quotedStart = ++index;
+                    let escaped = false;
+                    while (index < len) {
+                        const code = header.charCodeAt(index);
+                        if (code === DQUOTE) {
+                            if (parameters[key] === undefined) {
+                                parameters[key] = escaped
+                                    ? unescapeQuotedPairs(header, quotedStart, index)
+                                    : header.slice(quotedStart, index);
+                            }
+                            index++;
+                            let stop = 0;
+                            // Discard characters between quote and delimiter.
+                            while (index < len) {
+                                const code = header.charCodeAt(index);
+                                const flags = CHAR_MAP[code];
+                                if ((flags & stopFlags) !== 0) {
+                                    stop = flags & COMMA_FLAG;
+                                    break;
+                                }
+                                index++;
+                            }
+                            if (stop !== 0)
+                                break parameter;
+                            continue parameter;
+                        }
+                        if (code === BSLASH && index + 1 < len) {
+                            escaped = true;
+                            index += 2;
+                            continue;
+                        }
+                        index++;
+                    }
+                    continue parameter;
+                }
+                const valueStart = index;
+                let stop = 0;
+                let valueWhitespace = -1;
+                while (index < len) {
+                    const code = header.charCodeAt(index);
+                    const flags = CHAR_MAP[code];
+                    if ((flags & stopFlags) !== 0) {
+                        stop = flags & COMMA_FLAG;
+                        break;
+                    }
+                    if ((flags & OWS) !== 0) {
+                        if (valueWhitespace === -1)
+                            valueWhitespace = index;
+                    }
+                    else {
+                        valueWhitespace = -1;
+                    }
+                    index++;
+                }
+                if (parameters[key] === undefined) {
+                    const valueEnd = valueWhitespace === -1 ? index : valueWhitespace;
+                    parameters[key] = header.slice(valueStart, valueEnd);
+                }
+                if (stop !== 0)
+                    break parameter;
+                continue parameter;
+            }
+            if ((flags & OWS) !== 0) {
+                if (keyWhitespace === -1)
+                    keyWhitespace = index;
+            }
+            else {
+                keyWhitespace = -1;
+            }
+            keyFlags |= (code & NON_ASCII) | flags;
+            index++;
+        }
+    }
+    return { type, index, parameters };
+}
+/**
+ * Remove backslashes from quoted pairs in a known-terminated quoted string body.
+ */
+function unescapeQuotedPairs(str, start, end) {
+    let result = "";
+    for (let index = start; index < end; index++) {
+        if (str.charCodeAt(index) === BSLASH) {
+            result += str.slice(start, index);
+            start = ++index;
+        }
+    }
+    return result + str.slice(start, end);
+}
+
+const intRegex = /^-?\d+$/;
+const noiseValue = /^-?\d+n+$/; // Noise - strings that match the custom format before being converted to it
+const originalStringify = JSON.stringify;
+const originalParse = JSON.parse;
+const customFormat = /^-?\d+n$/;
+
+const bigIntsStringify = /([\[:])?"(-?\d+)n"($|\s*[,\}\]])/g;
+const noiseStringify = /([\[:])?("-?\d+n+)n("$|"\s*[,\}\]])/g;
+
+/**
+ * @typedef {(this: any, key: string | number | undefined, value: any) => any} Replacer
+ * @typedef {(key: string | number | undefined, value: any, context?: { source: string }) => any} Reviver
+ */
+
+/**
+ * Checks if a value is unstringifiable according to native JSON.stringify rules.
+ *
+ * @param {any} val The value to check.
+ * @returns {boolean} True if the value is undefined, a function, or a symbol.
+ */
+const isUnstringifiable = (val) =>
+  val === undefined || typeof val === "function" || typeof val === "symbol";
+
+/**
+ * Checks if a value is a native JSON.rawJSON object (Node.js 22+).
+ *
+ * @param {any} val The value to check.
+ * @returns {boolean} True if the value is a RawJSON instance.
+ */
+const isRawJSON = (val) =>
+  val !== null &&
+  typeof val === "object" &&
+  val.constructor &&
+  val.constructor.name === "RawJSON";
+
+/**
+ * Iteratively converts a JS value to a JSON string.
+ * Used as a fallback when the native JSON.stringify hits the Maximum Call Stack size.
+ * Fully compliant with JSON formatting (space), replacers, and toJSON behaviors.
+ *
+ * @param {any} rootValue The value to stringify.
+ * @param {Replacer | Array<string | number> | null} [replacer] User's custom replacer function.
+ * @param {string | number} [spaceParam] Indentation for pretty-printing.
+ * @returns {string | undefined} The generated JSON string.
+ */
+const stringifyIteratively = (rootValue, replacer, spaceParam) => {
+  let space = "";
+  const propertyList = Array.isArray(replacer)
+    ? new Set(replacer.map(String))
+    : null;
+
+  /**
+   * Prepares a value for stringification by resolving toJSON, handling BigInts,
+   * applying custom replacers, and unwrapping primitive objects.
+   *
+   * @param {object|Array} parent The parent object or array holding the value.
+   * @param {string} key The key associated with the value.
+   * @param {any} val The raw value to process.
+   * @returns {any} The processed value ready for stringification.
+   */
+  const prepareVal = (parent, key, val) => {
+    const isObject = val !== null && typeof val === "object";
+    const hasToJSON = isObject && typeof val.toJSON === "function";
+
+    if (hasToJSON) {
+      val = val.toJSON(key);
+    }
+
+    const isNoise = typeof val === "string" && noiseValue.test(val);
+
+    if (isNoise) return val + "n";
+
+    const isBigInt = typeof val === "bigint";
+
+    if (isBigInt) {
+      const supportsRawJSON = "rawJSON" in JSON;
+
+      if (supportsRawJSON) return JSON.rawJSON(val.toString());
+
+      return val.toString() + "n";
+    }
+
+    const isPostReplacerObject = val !== null && typeof val === "object";
+
+    if (isPostReplacerObject) {
+      const isPrimitiveWrapper =
+        val instanceof Number ||
+        val instanceof String ||
+        val instanceof Boolean;
+
+      if (isPrimitiveWrapper) {
+        val = val.valueOf();
+      }
+    }
+
+    return val;
+  };
+
+  const rootProcessed = prepareVal({ }, "", rootValue);
+
+  if (isUnstringifiable(rootProcessed)) {
+    return undefined;
+  }
+
+  const isRootPrimitive =
+    rootProcessed === null || typeof rootProcessed !== "object";
+  const isRootNativeRawJSON = isRawJSON(rootProcessed);
+
+  if (isRootPrimitive || isRootNativeRawJSON) {
+    return originalStringify(rootProcessed);
+  }
+
+  const chunks = [];
+
+  const stack = [
+    {
+      parent: { "": rootProcessed },
+      key: "",
+      val: rootProcessed,
+      isArray: Array.isArray(rootProcessed),
+      keys: Array.isArray(rootProcessed) ? null : Object.keys(rootProcessed),
+      index: 0,
+      first: true,
+    },
+  ];
+
+  const visited = new WeakSet([rootProcessed]);
+
+  while (stack.length > 0) {
+    const node = stack[stack.length - 1];
+
+    if (node.index === 0) {
+      chunks.push(node.isArray ? "[" : "{");
+    }
+
+    let isDone = false;
+
+    if (node.isArray) {
+      if (node.index < node.val.length) {
+        if (!node.first) chunks.push(",");
+
+        const childRaw = node.val[node.index];
+        const childVal = prepareVal(node.val, String(node.index), childRaw);
+
+        if (isUnstringifiable(childVal)) {
+          chunks.push("null");
+          node.first = false;
+          node.index++;
+        } else {
+          const isComplexObject =
+            childVal !== null && typeof childVal === "object";
+          const isNativeRaw = isRawJSON(childVal);
+
+          if (isComplexObject && !isNativeRaw) {
+            if (visited.has(childVal)) {
+              throw new TypeError("Converting circular structure to JSON");
+            }
+
+            visited.add(childVal);
+
+            stack.push({
+              parent: node.val,
+              key: String(node.index),
+              val: childVal,
+              isArray: Array.isArray(childVal),
+              keys: Array.isArray(childVal) ? null : Object.keys(childVal),
+              index: 0,
+              first: true,
+            });
+
+            node.first = false;
+            node.index++;
+          } else {
+            chunks.push(originalStringify(childVal));
+            node.first = false;
+            node.index++;
+          }
+        }
+      } else {
+        isDone = true;
+      }
+    } else {
+      while (node.index < node.keys.length) {
+        const k = node.keys[node.index++];
+
+        const isFilteredOutByArray = propertyList && !propertyList.has(k);
+
+        if (isFilteredOutByArray) continue;
+
+        const childRaw = node.val[k];
+        const childVal = prepareVal(node.val, k, childRaw);
+
+        if (isUnstringifiable(childVal)) continue;
+
+        if (!node.first) chunks.push(",");
+
+        {
+          chunks.push(originalStringify(k) + ":");
+        }
+
+        const isComplexObject =
+          childVal !== null && typeof childVal === "object";
+        const isNativeRaw = isRawJSON(childVal);
+
+        if (isComplexObject && !isNativeRaw) {
+          if (visited.has(childVal)) {
+            throw new TypeError("Converting circular structure to JSON");
+          }
+
+          visited.add(childVal);
+
+          stack.push({
+            parent: node.val,
+            key: k,
+            val: childVal,
+            isArray: Array.isArray(childVal),
+            keys: Array.isArray(childVal) ? null : Object.keys(childVal),
+            index: 0,
+            first: true,
+          });
+
+          node.first = false;
+
+          break; // Stop current loop level to process the newly pushed stack node
+        } else {
+          chunks.push(originalStringify(childVal));
+          node.first = false;
+        }
+      }
+
+      const isNodeFullyProcessed =
+        node.index >= node.keys.length && stack[stack.length - 1] === node;
+
+      if (isNodeFullyProcessed) {
+        isDone = true;
+      }
+    }
+
+    if (isDone) {
+
+      if (!node.first && space) ;
+
+      chunks.push(node.isArray ? "]" : "}");
+      visited.delete(node.val);
+      stack.pop();
+    }
+  }
+
+  return chunks.join("");
+};
+
+/**
+ * Converts a JavaScript value to a JSON string.
+ *
+ * Supports serialization of BigInt values using two strategies:
+ * 1. Custom format "123n" → "123" (universal fallback)
+ * 2. Native JSON.rawJSON() (Node.js 22+, fastest) when available
+ *
+ * All other values are serialized exactly like native JSON.stringify().
+ *
+ * @param {*} value The value to convert to a JSON string.
+ * @param {Replacer | Array<string | number> | null} [replacer]
+ * A function that alters the behavior of the stringification process,
+ * or an array of strings/numbers to indicate properties to exclude.
+ * @param {string | number} [space]
+ * A string or number to specify indentation or pretty-printing.
+ * @returns {string} The JSON string representation.
+ */
+const JSONStringify = (value, replacer, space) => {
+  try {
+    const supportsRawJSON = "rawJSON" in JSON;
+
+    if (supportsRawJSON) {
+      return originalStringify(
+        value,
+        (key, val) => {
+          if (typeof val === "bigint") return JSON.rawJSON(val.toString());
+
+          const hasFunctionReplacer = typeof replacer === "function";
+
+          if (hasFunctionReplacer) ;
+
+          const isKeyInArrayReplacer =
+            Array.isArray(replacer) && replacer.includes(key);
+
+          if (isKeyInArrayReplacer) return val;
+
+          return val;
+        },
+        space,
+      );
+    }
+
+    if (!value) return originalStringify(value, replacer, space);
+
+    const convertedToCustomJSON = originalStringify(
+      value,
+      (key, val) => {
+        const isNoise = typeof val === "string" && noiseValue.test(val);
+
+        if (isNoise) return val.toString() + "n"; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+        if (typeof val === "bigint") return val.toString() + "n";
+
+        const hasFunctionReplacer = typeof replacer === "function";
+
+        if (hasFunctionReplacer) ;
+
+        const isKeyInArrayReplacer =
+          Array.isArray(replacer) && replacer.includes(key);
+
+        if (isKeyInArrayReplacer) return val;
+
+        return val;
+      },
+      space,
+    );
+
+    const processedJSON = convertedToCustomJSON.replace(
+      bigIntsStringify,
+      "$1$2$3",
+    ); // Delete one "n" off the end of every BigInt value
+
+    const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3"); // Remove one "n" off the end of every noisy string
+
+    return denoisedJSON;
+  } catch (error) {
+    if (error instanceof RangeError) {
+      const convertedJSON = stringifyIteratively(value, replacer);
+
+      if (convertedJSON === undefined) return undefined;
+
+      const supportsRawJSON = "rawJSON" in JSON;
+
+      if (supportsRawJSON) return convertedJSON;
+
+      const processedJSON = convertedJSON.replace(bigIntsStringify, "$1$2$3");
+
+      return processedJSON.replace(noiseStringify, "$1$2$3");
+    }
+
+    throw error;
+  }
+};
+
+const featureCache = new Map();
+
+/**
+ * Detects if the current JSON.parse implementation supports the context.source feature.
+ *
+ * Uses toString() fingerprinting to cache results and automatically detect runtime
+ * replacements of JSON.parse (polyfills, mocks, etc.).
+ *
+ * @returns {boolean} true if context.source is supported, false otherwise.
+ */
+const isContextSourceSupported = () => {
+  const parseFingerprint = JSON.parse.toString();
+
+  if (featureCache.has(parseFingerprint)) {
+    return featureCache.get(parseFingerprint);
+  }
+
+  try {
+    const result = JSON.parse(
+      "1",
+      (_, __, context) => !!context?.source && context.source === "1",
+    );
+    featureCache.set(parseFingerprint, result);
+
+    return result;
+  } catch {
+    featureCache.set(parseFingerprint, false);
+
+    return false;
+  }
+};
+
+/**
+ * Reviver function that converts custom-format BigInt strings back to BigInt values.
+ * Also handles "noise" strings that accidentally match the BigInt format.
+ *
+ * @param {string | number | undefined} key The object key.
+ * @param {*} value The value being parsed.
+ * @param {object} [context] Parse context (if supported by JSON.parse).
+ * @param {Reviver} [userReviver] User's custom reviver function.
+ * @returns {any} The transformed value.
+ */
+const convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
+  const isCustomFormatBigInt =
+    typeof value === "string" && customFormat.test(value);
+
+  if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
+
+  const isNoiseValue = typeof value === "string" && noiseValue.test(value);
+  if (isNoiseValue) return value.slice(0, -1);
+
+  return value;
+};
+
+/**
+ * Fast JSON.parse implementation (~2x faster than classic fallback).
+ * Uses JSON.parse's context.source feature to detect integers and convert
+ * large numbers directly to BigInt without string manipulation.
+ *
+ * Does not support legacy custom format from v1 of this library.
+ *
+ * @param {string} text JSON string to parse.
+ * @param {Reviver} [reviver] Transform function to apply to each value.
+ * @returns {any} Parsed JavaScript value.
+ */
+const JSONParseV2 = (text, reviver) => {
+  return JSON.parse(text, (key, value, context) => {
+    const isNumber = typeof value === "number";
+    const isOutOfBounds =
+      value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER;
+    const isBigNumber = isNumber && isOutOfBounds;
+    const isInt = context && intRegex.test(context.source);
+    const isBigInt = isBigNumber && isInt;
+
+    if (isBigInt) return BigInt(context.source);
+
+    return value;
+  });
+};
+
+const MAX_INT = Number.MAX_SAFE_INTEGER.toString();
+const MAX_DIGITS = MAX_INT.length;
+const stringsOrLargeNumbers =
+  /"(?:[^"\\]|\\.)*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+const noiseValueWithQuotes = /^"-?\d+n+"$/; // Noise - strings that match the custom format before being converted to it
+
+/**
+ * Iteratively traverses the parsed object bottom-up (post-order),
+ * emulating the native JSON.parse reviver behavior.
+ * This avoids Call Stack overflows (RangeError) on deeply nested structures.
+ *
+ * @param {any} parsed The natively parsed JSON object.
+ * @param {Reviver} [userReviver] User's custom reviver function.
+ * @returns {any} The fully processed object.
+ */
+const applyReviverIteratively = (parsed, userReviver) => {
+  const rootHolder = { "": parsed };
+  const stack = [{ parent: rootHolder, key: "", visited: false }];
+
+  while (stack.length > 0) {
+    const node = stack[stack.length - 1];
+
+    if (!node.visited) {
+      node.visited = true;
+
+      const value = node.parent[node.key];
+      const isComplexObject = value !== null && typeof value === "object";
+
+      if (isComplexObject) {
+        const keys = Object.keys(value);
+
+        for (let i = keys.length - 1; i >= 0; i--) {
+          stack.push({ parent: value, key: keys[i], visited: false });
+        }
+      }
+    } else {
+      const { parent, key } = node;
+      let value = parent[key];
+
+      if (typeof value === "string") {
+        const isCustomFormatBigInt = customFormat.test(value);
+
+        if (isCustomFormatBigInt) {
+          value = BigInt(value.slice(0, -1));
+        } else {
+          const isNoise = noiseValue.test(value);
+
+          if (isNoise) value = value.slice(0, -1);
+        }
+      }
+
+      const isDeleted = value === undefined;
+
+      if (isDeleted) {
+        delete parent[key];
+      } else {
+        parent[key] = value;
+      }
+
+      stack.pop();
+    }
+  }
+
+  return rootHolder[""];
+};
+
+/**
+ * Pre-processes the JSON string to mark large numbers with an 'n' suffix.
+ *
+ * @param {string} text The raw JSON string.
+ * @returns {string} The serialized string with marked BigInts.
+ */
+const serializeBigInts = (text) => {
+  return text.replace(
+    stringsOrLargeNumbers,
+    (match, digits, fractional, exponential) => {
+      const isString = match[0] === '"';
+      const isNoise = isString && noiseValueWithQuotes.test(match);
+
+      if (isNoise) return match.substring(0, match.length - 1) + 'n"'; // Mark noise values with additional "n" to offset the deletion of one "n" during the processing
+
+      const hasFractionalOrExponential = fractional || exponential;
+
+      // With a fixed number of digits, we can correctly use lexicographical comparison to do a numeric comparison
+      const isLessThanMaxSafeInt =
+        digits &&
+        (digits.length < MAX_DIGITS ||
+          (digits.length === MAX_DIGITS && digits <= MAX_INT));
+
+      const isStandardValue =
+        isString || hasFractionalOrExponential || isLessThanMaxSafeInt;
+
+      if (isStandardValue) return match;
+
+      return '"' + match + 'n"';
+    },
+  );
+};
+
+/**
+ * Converts a JSON string into a JavaScript value.
+ *
+ * Supports parsing of large integers using two strategies:
+ * 1. Classic fallback: Marks large numbers with "123n" format, then converts to BigInt
+ * 2. Fast path (JSONParseV2): Uses context.source feature (~2x faster) when available
+ *
+ * All other JSON values are parsed exactly like native JSON.parse().
+ *
+ * @param {string} text A valid JSON string.
+ * @param {Reviver} [reviver]
+ * A function that transforms the results. This function is called for each member
+ * of the object. If a member contains nested objects, the nested objects are
+ * transformed before the parent object is.
+ * @returns {any} The parsed JavaScript value.
+ * @throws {SyntaxError} If text is not valid JSON.
+ */
+const JSONParse = (text, reviver) => {
+  if (!text) return originalParse(text, reviver);
+
+  try {
+    if (isContextSourceSupported()) return JSONParseV2(text, reviver); // Shortcut to a faster (2x) and simpler version
+
+    // Find and mark big numbers with "n"
+    const serializedData = serializeBigInts(text);
+
+    return originalParse(serializedData, (key, value, context) =>
+      convertMarkedBigIntsReviver(key, value, context, reviver),
+    );
+  } catch (error) {
+    if (error instanceof RangeError) {
+      const serializedData = serializeBigInts(text);
+      const parsed = originalParse(serializedData);
+
+      return applyReviverIteratively(parsed);
+    }
+
+    throw error;
+  }
+};
 
 class RequestError extends Error {
   name;
@@ -31271,7 +31177,7 @@ class RequestError extends Error {
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$4 = "10.0.8";
+var VERSION$4 = "10.0.16";
 
 // pkg/dist-src/defaults.js
 var defaults_default = {
@@ -31393,7 +31299,7 @@ async function getResponseData(response) {
   if (!contentType) {
     return response.text().catch(noop$1);
   }
-  const mimetype = fastContentTypeParseExports.safeParse(contentType);
+  const mimetype = parse(contentType);
   if (isJSONResponse(mimetype)) {
     let text = "";
     try {
@@ -31402,7 +31308,10 @@ async function getResponseData(response) {
     } catch (err) {
       return text;
     }
-  } else if (mimetype.type.startsWith("text/") || mimetype.parameters.charset?.toLowerCase() === "utf-8") {
+  } else if (mimetype.type.startsWith("text/") || // `application/octet-stream` is the canonical "arbitrary binary" type
+  // (RFC 2046) and must never be decoded as text, even when the response
+  // carries a (misleading) `charset=utf-8` parameter — see #751.
+  mimetype.parameters.charset?.toLowerCase() === "utf-8" && mimetype.type !== "application/octet-stream") {
     return response.text().catch(noop$1);
   } else {
     return response.arrayBuffer().catch(
@@ -31421,9 +31330,10 @@ function toErrorMessage(data) {
   if (data instanceof ArrayBuffer) {
     return "Unknown error";
   }
-  if ("message" in data) {
-    const suffix = "documentation_url" in data ? ` - ${data.documentation_url}` : "";
-    return Array.isArray(data.errors) ? `${data.message}: ${data.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${data.message}${suffix}`;
+  if (typeof data === "object" && data !== null && "message" in data) {
+    const objectData = data;
+    const suffix = "documentation_url" in objectData ? ` - ${objectData.documentation_url}` : "";
+    return Array.isArray(objectData.errors) ? `${objectData.message}: ${objectData.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${objectData.message}${suffix}`;
   }
   return `Unknown error: ${JSON.stringify(data)}`;
 }
@@ -31480,6 +31390,9 @@ var GraphqlResponseError = class extends Error {
       Error.captureStackTrace(this, this.constructor);
     }
   }
+  request;
+  headers;
+  response;
   name = "GraphqlResponseError";
   errors;
   data;
@@ -31574,6 +31487,7 @@ function withCustomRequest(customRequest) {
     url: "/graphql"
   });
 }
+/* v8 ignore if -- @preserve */
 
 // pkg/dist-src/is-jwt.js
 var b64url = "(?:[a-zA-Z0-9_-]+)";
@@ -31628,7 +31542,7 @@ var createTokenAuth = function createTokenAuth2(token) {
   });
 };
 
-const VERSION$2 = "7.0.6";
+const VERSION$2 = "7.0.8";
 
 const noop = () => {
 };
@@ -31649,7 +31563,7 @@ function createLogger(logger = {}) {
   }
   return logger;
 }
-const userAgentTrail = `octokit-core.js/${VERSION$2} ${getUserAgent$1()}`;
+const userAgentTrail = `octokit-core.js/${VERSION$2} ${getUserAgent()}`;
 class Octokit {
   static VERSION = VERSION$2;
   static defaults(defaults) {
@@ -31693,7 +31607,7 @@ class Octokit {
   constructor(options = {}) {
     const hook = new Hook.Collection();
     const requestDefaults = {
-      baseUrl: request$1.endpoint.DEFAULTS.baseUrl,
+      baseUrl: request.endpoint.DEFAULTS.baseUrl,
       headers: {},
       request: Object.assign({}, options.request, {
         // @ts-ignore internal usage only, no need to type
@@ -31714,7 +31628,7 @@ class Octokit {
     if (options.timeZone) {
       requestDefaults.headers["time-zone"] = options.timeZone;
     }
-    this.request = request$1.defaults(requestDefaults);
+    this.request = request.defaults(requestDefaults);
     this.graphql = withCustomRequest(this.request).defaults(requestDefaults);
     this.log = createLogger(options.log);
     this.hook = hook;
